@@ -3,28 +3,16 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>電材スキャンPRO 改良版</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>電材スキャンPRO 最終版</title>
 
 <style>
-:root{
-  --bg:#101418;--card:#1b2229;--line:#2e3a45;
-  --text:#f5f7fa;--sub:#a7b3bf;
-  --ok:#00c853;--blue:#2962ff;--orange:#ff9800;--danger:#ff5252;
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:sans-serif;text-align:center}
-.wrap{max-width:840px;margin:auto;padding:16px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin:10px 0}
-input{width:100%;padding:13px;border-radius:10px;border:1px solid var(--line);background:#0f1419;color:#fff}
-button{width:100%;padding:14px;margin:6px 0;border:none;border-radius:12px;color:#fff;font-size:16px}
-.secondary{background:#2962ff}
-.orange{background:#ff9800}
-.dark{background:#455a64}
-.danger{background:#ff5252}
-button{background:#00c853}
-video{width:100%;max-height:48vh;background:#000;border-radius:14px}
-.links a{display:block;background:#2962ff;margin:6px 0;padding:12px;border-radius:10px;color:#fff;text-decoration:none}
+body{margin:0;background:#101418;color:#fff;font-family:sans-serif;text-align:center}
+.wrap{max-width:800px;margin:auto;padding:10px}
+.card{background:#1b2229;padding:10px;margin:10px;border-radius:10px}
+button{width:100%;padding:14px;margin:5px;border:none;border-radius:10px;background:#00c853;color:#fff}
+video{width:100%;max-height:50vh;background:#000;border-radius:10px}
+a{display:block;background:#2962ff;margin:5px;padding:10px;border-radius:8px;color:#fff;text-decoration:none}
 </style>
 
 </head>
@@ -32,32 +20,23 @@ video{width:100%;max-height:48vh;background:#000;border-radius:14px}
 <body>
 <div class="wrap">
 
-<h2>📷 電材スキャンPRO</h2>
+<h2>電材スキャンPRO 最終</h2>
 
 <div class="card">
-<input id="site" placeholder="現場名">
-<input id="manual" placeholder="品番 or 商品名">
+<input id="manual" placeholder="品番">
 </div>
 
 <div class="card">
-<button onclick="startCamera()">カメラ起動</button>
-<button class="secondary" onclick="scan()">スキャン</button>
-<button class="orange" onclick="manualSearch()">検索</button>
-<button class="dark" onclick="share()">LINE送信</button>
-<button class="danger" onclick="stopCamera()">停止</button>
-</div>
-
-<div class="card">
-<label><input type="checkbox" id="modeMaker" checked> メーカー優先</label><br>
-<label><input type="checkbox" id="modeJP" checked> 日本語検索</label><br>
-<label><input type="checkbox" id="modeAll"> 全検索</label>
+<button onclick="startCamera()">カメラ</button>
+<button onclick="scan()">スキャン</button>
+<button onclick="search()">検索</button>
+<button onclick="stopCamera()">停止</button>
 </div>
 
 <video id="video" autoplay playsinline muted></video>
 
 <div id="status"></div>
-
-<div class="card links" id="links"></div>
+<div id="links"></div>
 
 </div>
 
@@ -68,30 +47,44 @@ video{width:100%;max-height:48vh;background:#000;border-radius:14px}
 let stream=null;
 let worker=null;
 
-const makers=[
-"パナソニック","Panasonic","東芝","三菱電機",
-"未来工業","ネグロス","テンパール",
-"河村電器","オーデリック","大光電機","神保電器"
-];
-
-function extractJP(text){
-return (text.match(/[\u3040-\u30FF\u4E00-\u9FFF]{2,}/g)||[]);
+// ---------- 品番スコア ----------
+function scoreCode(c){
+let s=0;
+if(c.length>=5)s+=2;
+if(/[A-Z]/.test(c))s+=3;
+if(/\d/.test(c))s+=3;
+if(/[-/.]/.test(c))s+=2;
+if(/^[A-Z0-9\-/.]+$/.test(c))s+=2;
+if(/^[0-9]+$/.test(c))s-=2;
+return s;
 }
 
-// カメラ
+// ---------- 品番抽出 ----------
+function extractCodes(text){
+const raw=(text.match(/[A-Z0-9][A-Z0-9\-/.]{3,20}/g)||[]);
+return [...new Set(raw)].sort((a,b)=>scoreCode(b)-scoreCode(a));
+}
+
+// ---------- OCR worker ----------
+async function getWorker(){
+if(worker)return worker;
+worker=await Tesseract.createWorker("eng");
+await worker.setParameters({
+tessedit_char_whitelist:"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_/."
+});
+return worker;
+}
+
+// ---------- カメラ ----------
 async function startCamera(){
-try{
 stream=await navigator.mediaDevices.getUserMedia({
-video:{facingMode:{ideal:"environment"}},audio:false
+video:{facingMode:{ideal:"environment"}}
 });
 video.srcObject=stream;
 await video.play();
-status.innerText="カメラOK";
-}catch(e){
-status.innerText="カメラNG";
-}
 }
 
+// ---------- 停止 ----------
 function stopCamera(){
 if(stream){
 stream.getTracks().forEach(t=>t.stop());
@@ -99,100 +92,112 @@ stream=null;
 }
 }
 
-// OCR
-async function getWorker(){
-if(worker)return worker;
-worker=await Tesseract.createWorker("eng");
-return worker;
+// ---------- 領域切り取り ----------
+function cropCenter(canvas){
+
+const w=canvas.width;
+const h=canvas.height;
+
+const cw=w*0.7;
+const ch=h*0.3;
+
+const x=(w-cw)/2;
+const y=(h-ch)/2;
+
+const out=document.createElement("canvas");
+out.width=cw;
+out.height=ch;
+
+const ctx=out.getContext("2d");
+ctx.drawImage(canvas,x,y,cw,ch,0,0,cw,ch);
+
+return out;
 }
 
-// スキャン
+// ---------- 前処理 ----------
+function preprocess(canvas){
+
+const ctx=canvas.getContext("2d");
+const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+const d=img.data;
+
+for(let i=0;i<d.length;i+=4){
+let g=d[i]*0.3+d[i+1]*0.59+d[i+2]*0.11;
+g=(g-128)*1.8+128;
+g=Math.max(0,Math.min(255,g));
+d[i]=d[i+1]=d[i+2]=g;
+}
+
+ctx.putImageData(img,0,0);
+return canvas;
+}
+
+// ---------- スキャン ----------
 async function scan(){
+
 if(!video.videoWidth){
-alert("カメラ起動してから");
+alert("カメラ起動して");
 return;
 }
 
 status.innerText="読取中";
 
+try{
+
+// フルキャプチャ
 const canvas=document.createElement("canvas");
 canvas.width=video.videoWidth;
 canvas.height=video.videoHeight;
+canvas.getContext("2d").drawImage(video,0,0);
 
-const ctx=canvas.getContext("2d");
-ctx.drawImage(video,0,0);
+// 中央切り取り（重要）
+const cropped=cropCenter(canvas);
 
+// 前処理（重要）
+const processed=preprocess(cropped);
+
+// OCR
 const w=await getWorker();
-const ret=await w.recognize(canvas);
-
+const ret=await w.recognize(processed);
 const text=ret.data.text||"";
 
 // 品番抽出
-const code=(text.match(/[A-Z0-9\-]{4,}/)||[""])[0];
+const codes=extractCodes(text);
+const best=codes[0]||"";
 
-manual.value=code;
+manual.value=best;
 
-render(code,text);
+// デバッグ用
+console.log(text,codes);
+
+render(best);
 
 status.innerText="完了";
-}
 
-// 検索生成
-function buildQueries(p,text){
-
-let q=[];
-const jp=extractJP(text);
-
-const maker=modeMaker.checked;
-const jpMode=modeJP.checked;
-const all=modeAll.checked;
-
-if(all){
-if(p)q.push(p);
-jp.forEach(w=>q.push(w));
-}else{
-
-if(maker){
-makers.forEach(m=>{
-if(p)q.push(m+" "+p);
-if(jpMode)jp.forEach(w=>q.push(m+" "+w));
-});
-}
-
-if(p)q.push(p);
-
-if(jpMode){
-jp.forEach(w=>q.push(w));
+}catch(e){
+console.error(e);
+status.innerText="失敗";
 }
 
 }
 
-return [...new Set(q)].slice(0,10);
+// ---------- 検索 ----------
+function render(p){
+
+if(!p){
+links.innerHTML="無し";
+return;
 }
 
-// 表示
-function render(p,text){
-const qs=buildQueries(p,text);
-
-links.innerHTML=qs.map(q=>
-`<a href="https://www.google.com/search?q=${encodeURIComponent(q+" 仕様書 図面")}" target="_blank">🔎 ${q}</a>`
-).join("");
+links.innerHTML=`
+<a href="https://www.google.com/search?q=${p}+仕様書" target="_blank">説明書</a>
+<a href="https://www.google.com/search?q=${p}+図面" target="_blank">図面</a>
+<a href="https://www.google.com/search?q=${p}" target="_blank">検索</a>
+`;
 }
 
-// 手入力
-function manualSearch(){
-render(manual.value,"");
-}
-
-// 共有
-async function share(){
-const txt=site.value+"\n"+manual.value;
-
-if(navigator.share){
-await navigator.share({text:txt});
-}else{
-window.open("https://line.me/R/msg/text/?"+encodeURIComponent(txt));
-}
+function search(){
+render(manual.value);
 }
 
 </script>
