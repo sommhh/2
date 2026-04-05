@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>電材スキャンPRO 完成版</title>
+<title>電材スキャンPRO 改良版</title>
 
 <style>
 :root{
@@ -12,48 +12,52 @@
   --text:#f5f7fa;--sub:#a7b3bf;
   --ok:#00c853;--blue:#2962ff;--orange:#ff9800;--danger:#ff5252;
 }
+*{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:sans-serif;text-align:center}
 .wrap{max-width:840px;margin:auto;padding:16px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin:10px 0}
-input,button{width:100%;padding:14px;margin:6px 0;border-radius:10px;border:none;font-size:16px}
-button{background:var(--ok);color:#fff}
-.secondary{background:var(--blue)}
-.orange{background:var(--orange)}
+input{width:100%;padding:13px;border-radius:10px;border:1px solid var(--line);background:#0f1419;color:#fff}
+button{width:100%;padding:14px;margin:6px 0;border:none;border-radius:12px;color:#fff;font-size:16px}
+.secondary{background:#2962ff}
+.orange{background:#ff9800}
 .dark{background:#455a64}
-.danger{background:var(--danger)}
-video{width:100%;max-height:48vh;background:#000;border-radius:12px}
-.links a{display:block;background:var(--blue);margin:6px 0;padding:10px;border-radius:10px;color:#fff;text-decoration:none}
+.danger{background:#ff5252}
+button{background:#00c853}
+video{width:100%;max-height:48vh;background:#000;border-radius:14px}
+.links a{display:block;background:#2962ff;margin:6px 0;padding:12px;border-radius:10px;color:#fff;text-decoration:none}
 </style>
 
 </head>
 
 <body>
 <div class="wrap">
-<h2>📷 電材スキャンPRO 完成版</h2>
+
+<h2>📷 電材スキャンPRO</h2>
 
 <div class="card">
 <input id="site" placeholder="現場名">
-<input id="manual" placeholder="品番・商品名入力">
+<input id="manual" placeholder="品番 or 商品名">
 </div>
 
 <div class="card">
 <button onclick="startCamera()">カメラ起動</button>
 <button class="secondary" onclick="scan()">スキャン</button>
 <button class="orange" onclick="manualSearch()">検索</button>
-<button class="dark" onclick="share()">LINE共有</button>
+<button class="dark" onclick="share()">LINE送信</button>
 <button class="danger" onclick="stopCamera()">停止</button>
 </div>
 
 <div class="card">
 <label><input type="checkbox" id="modeMaker" checked> メーカー優先</label><br>
-<label><input type="checkbox" id="modeJP" checked> 日本語OK</label><br>
+<label><input type="checkbox" id="modeJP" checked> 日本語検索</label><br>
 <label><input type="checkbox" id="modeAll"> 全検索</label>
 </div>
 
-<video id="video" autoplay playsinline></video>
+<video id="video" autoplay playsinline muted></video>
 
 <div id="status"></div>
-<div class="card" id="links"></div>
+
+<div class="card links" id="links"></div>
 
 </div>
 
@@ -61,44 +65,81 @@ video{width:100%;max-height:48vh;background:#000;border-radius:12px}
 
 <script>
 
-let stream,worker;
+let stream=null;
+let worker=null;
 
-const makers=["パナソニック","Panasonic","東芝","三菱電機","未来工業","ネグロス","テンパール","河村電器","オーデリック","大光電機","神保電器"];
+const makers=[
+"パナソニック","Panasonic","東芝","三菱電機",
+"未来工業","ネグロス","テンパール",
+"河村電器","オーデリック","大光電機","神保電器"
+];
 
-function extractJP(t){return (t.match(/[\u3040-\u30FF\u4E00-\u9FFF]{2,}/g)||[]);}
-
-async function startCamera(){
-stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
-video.srcObject=stream;
+function extractJP(text){
+return (text.match(/[\u3040-\u30FF\u4E00-\u9FFF]{2,}/g)||[]);
 }
 
-function stopCamera(){if(stream)stream.getTracks().forEach(t=>t.stop());}
+// カメラ
+async function startCamera(){
+try{
+stream=await navigator.mediaDevices.getUserMedia({
+video:{facingMode:{ideal:"environment"}},audio:false
+});
+video.srcObject=stream;
+await video.play();
+status.innerText="カメラOK";
+}catch(e){
+status.innerText="カメラNG";
+}
+}
 
+function stopCamera(){
+if(stream){
+stream.getTracks().forEach(t=>t.stop());
+stream=null;
+}
+}
+
+// OCR
 async function getWorker(){
 if(worker)return worker;
 worker=await Tesseract.createWorker("eng");
 return worker;
 }
 
+// スキャン
 async function scan(){
-status.innerText="読み取り中...";
+if(!video.videoWidth){
+alert("カメラ起動してから");
+return;
+}
+
+status.innerText="読取中";
+
 const canvas=document.createElement("canvas");
 canvas.width=video.videoWidth;
 canvas.height=video.videoHeight;
-canvas.getContext("2d").drawImage(video,0,0);
+
+const ctx=canvas.getContext("2d");
+ctx.drawImage(video,0,0);
 
 const w=await getWorker();
 const ret=await w.recognize(canvas);
+
 const text=ret.data.text||"";
 
+// 品番抽出
 const code=(text.match(/[A-Z0-9\-]{4,}/)||[""])[0];
+
 manual.value=code;
 
 render(code,text);
+
 status.innerText="完了";
 }
 
+// 検索生成
 function buildQueries(p,text){
+
 let q=[];
 const jp=extractJP(text);
 
@@ -110,19 +151,26 @@ if(all){
 if(p)q.push(p);
 jp.forEach(w=>q.push(w));
 }else{
+
 if(maker){
 makers.forEach(m=>{
 if(p)q.push(m+" "+p);
 if(jpMode)jp.forEach(w=>q.push(m+" "+w));
 });
 }
+
 if(p)q.push(p);
-if(jpMode)jp.forEach(w=>q.push(w));
+
+if(jpMode){
+jp.forEach(w=>q.push(w));
+}
+
 }
 
 return [...new Set(q)].slice(0,10);
 }
 
+// 表示
 function render(p,text){
 const qs=buildQueries(p,text);
 
@@ -131,12 +179,15 @@ links.innerHTML=qs.map(q=>
 ).join("");
 }
 
+// 手入力
 function manualSearch(){
 render(manual.value,"");
 }
 
+// 共有
 async function share(){
 const txt=site.value+"\n"+manual.value;
+
 if(navigator.share){
 await navigator.share({text:txt});
 }else{
