@@ -2,153 +2,179 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>現場注文 Pro + AI</title>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>電材スキャンULTIMATE</title>
+
 <style>
-:root { --primary: #2563eb; --bg: #f3f4f6; }
-body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 10px; padding-bottom: 80px; }
-.card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 15px; }
-h3 { margin-top: 0; font-size: 1.1rem; color: #1e293b; border-left: 4px solid var(--primary); padding-left: 8px; }
-input, select, textarea, button { width: 100%; box-sizing: border-box; padding: 12px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
-button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; transition: opacity 0.2s; }
-button:active { opacity: 0.7; }
-.btn-outline { background: white; color: var(--primary); border: 1.5px solid var(--primary); }
-.flex { display: flex; gap: 8px; }
-#loading { display: none; text-align: center; color: var(--primary); font-size: 14px; padding: 10px; }
-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-th, td { border: 1px solid #e5e7eb; padding: 12px 8px; text-align: center; }
-.qty-input { width: 50px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
-/* フッター固定ボタン */
-.footer-actions { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 10px; display: flex; gap: 10px; border-top: 1px solid #ddd; }
-.footer-actions button { flex: 1; margin: 0; }
+body{margin:0;background:#111;color:#fff;font-family:sans-serif;text-align:center;}
+.wrap{padding:10px;max-width:900px;margin:auto;}
+button{width:100%;padding:14px;margin:5px;border:none;border-radius:10px;background:#00c853;color:#fff;font-size:16px;}
+input{width:100%;padding:10px;margin:5px;border-radius:8px;border:none;}
+video{width:100%;max-height:40vh;}
+a{display:block;background:#2962ff;margin:5px;padding:10px;border-radius:8px;color:#fff;text-decoration:none;}
+.card{background:#222;padding:10px;margin:8px 0;border-radius:10px;}
+img{max-width:200px;border-radius:8px;}
 </style>
 </head>
+
 <body>
+<div class="wrap">
 
-<div class="card">
-<h3 id="genba">📍 現場未取得</h3>
-<button class="btn-outline" onclick="getAddress()">現在地から住所を取得</button>
+<h2>📷 電材スキャンULTIMATE</h2>
+
+<input id="site" placeholder="現場名">
+<input id="manual" placeholder="品番入力">
+
+<button onclick="startCamera()">カメラ</button>
+<button onclick="scan()">スキャン</button>
+<button onclick="shareLine()">LINE送信</button>
+<button onclick="printData()">印刷</button>
+<button onclick="stopCamera()">停止</button>
+
+<video id="video" autoplay playsinline></video>
+<canvas id="canvas" style="display:none"></canvas>
+
+<div id="result"></div>
+<div id="links"></div>
+<div id="history"></div>
+
 </div>
 
-<div class="card">
-<h3>AI・注文解析</h3>
-<textarea id="ai-input" placeholder="例：ボルトM16を5個、あとワッシャーを10枚追加して。"></textarea>
-<button onclick="runAI()">AIで一括抽出（API不要）</button>
-<div id="loading">⏳ 解析中...</div>
-</div>
-
-<div class="card">
-<div class="flex">
-<input id="code-input" placeholder="品番/商品名を手入力">
-<button style="width: 60px;" onclick="ocrScan()">📷</button>
-</div>
-<input type="file" id="ocr-file" accept="image/*" capture="environment" style="display:none">
-<button class="btn-outline" onclick="addItemFromInput()">リストに追加</button>
-</div>
-
-<div class="card" style="padding: 0; overflow: hidden;">
-<table>
-<thead style="background: #f9fafb;">
-<tr><th>No</th><th>商品・品番</th><th>数量</th><th>消</th></tr>
-</thead>
-<tbody id="list-body"></tbody>
-</table>
-</div>
-
-<div class="footer-actions">
-<button onclick="copyToClipboard()">📋 コピー</button>
-<button style="background: #06C755;" onclick="sendLine()">LINE</button>
-<button style="background: #ea4335;" onclick="sendMail()">メール</button>
-</div>
-
-<script type="module">
-// --- 2026年最新版 Transformers.js (WebGPU対応) ---
-import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
-
-let extractor;
-const loading = document.getElementById('loading');
-
-// AIの初期化
-async function initAI() {
-try {
-// 軽量なGemmaベースの抽出モデルをロード（初回のみ数GBのDLが発生）
-extractor = await pipeline('text-generation', 'Xenova/gemma-2b-it');
-console.log("AI Model Loaded");
-} catch (e) { console.error("AI Init Error", e); }
-}
-initAI();
-
-// AI解析の実行
-window.runAI = async () => {
-const text = document.getElementById('ai-input').value;
-if (!text || !extractor) return alert("AIの準備中か、入力が空です");
-
-loading.style.display = "block";
-// 実際にはここでモデルにプロンプトを送り、JSONを抽出する
-// 今回はデモとして「商品名」と「数量」を簡易的に抽出するロジックを想定
-setTimeout(() => {
-// 仮の結果（実際はAIの戻り値をパース）
-addItem("解析済み商品", "1");
-loading.style.display = "none";
-}, 1500);
-};
-</script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <script>
-// --- 基本機能 ---
-const listBody = document.getElementById('list-body');
+let db,stream,worker,last;
 
-function getAddress() {
-navigator.geolocation.getCurrentPosition(async pos => {
-const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
-const data = await res.json();
-document.getElementById('genba').innerText = "📍 " + (data.display_name.split(',')[0] || "取得完了");
-});
-}
-
-function addItemFromInput() {
-const input = document.getElementById('code-input');
-if(!input.value) return;
-addItem(input.value, 1);
-input.value = "";
-}
-
-function addItem(name, qty) {
-const row = document.createElement('tr');
-row.innerHTML = `
-<td>${listBody.children.length + 1}</td>
-<td style="text-align:left">${name}</td>
-<td><input type="number" class="qty-input" value="${qty}"></td>
-<td><button onclick="this.closest('tr').remove()" style="background:none; color:red; padding:0">✕</button></td>
-`;
-listBody.appendChild(row);
-}
-
-// OCRスキャン
-function ocrScan() { document.getElementById('ocr-file').click(); }
-document.getElementById('ocr-file').onchange = async e => {
-const file = e.target.files[0];
-if(!file) return;
-const result = await Tesseract.recognize(file, 'jpn+eng');
-alert("読み取り結果を追加しました");
-addItem(result.data.text.substring(0, 20) + "...", 1);
+// DB
+const req=indexedDB.open("db",1);
+req.onupgradeneeded=e=>{
+ db=e.target.result;
+ db.createObjectStore("r",{keyPath:"id",autoIncrement:true});
 };
+req.onsuccess=e=>{db=e.target.result;load();};
 
-// 出力系
-function makeText() {
-let t = `【注文】${document.getElementById('genba').innerText}\n\n`;
-Array.from(listBody.children).forEach((tr, i) => {
-const name = tr.children[1].innerText;
-const qty = tr.querySelector('.qty-input').value;
-t += `${i+1}. ${name} × ${qty}\n`;
-});
-return t;
+// カメラ
+async function startCamera(){
+ if(stream) return;
+ stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+ video.srcObject=stream;
+}
+function stopCamera(){
+ if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+ video.srcObject=null;
 }
 
-function copyToClipboard() { navigator.clipboard.writeText(makeText()); alert("コピーしました"); }
-function sendLine() { window.open(`https://line.me/R/msg/text/?${encodeURIComponent(makeText())}`); }
-function sendMail() { location.href = `mailto:?subject=注文&body=${encodeURIComponent(makeText())}`; }
+// OCR
+async function getWorker(){
+ if(worker) return worker;
+ worker=await Tesseract.createWorker("eng");
+ await worker.setParameters({tessedit_char_whitelist:"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-/"});
+ return worker;
+}
+
+// スキャン
+async function scan(){
+ const ctx=canvas.getContext("2d");
+ canvas.width=video.videoWidth;
+ canvas.height=video.videoHeight;
+ ctx.drawImage(video,0,0);
+
+ let product="";
+
+ // バーコード
+ if("BarcodeDetector" in window){
+  try{
+   const d=new BarcodeDetector();
+   const r=await d.detect(canvas);
+   if(r.length) product=r[0].rawValue;
+  }catch{}
+ }
+
+ // OCR
+ if(!product){
+  const w=await getWorker();
+  const r=await w.recognize(canvas);
+  product=r.data.text.replace(/\s/g,"")
+   .replace(/O/g,"0").replace(/[IL]/g,"1")
+   .toUpperCase().trim();
+ }
+
+ if(!product) product=prompt("品番入力")||"";
+
+ manual.value=product;
+
+ const data={
+  product,
+  site:site.value||"未設定",
+  date:new Date().toLocaleString(),
+  img:canvas.toDataURL("image/jpeg",0.8)
+ };
+
+ last=data;
+ save(data);
+ show(data);
+}
+
+// 表示
+function show(d){
+ result.innerHTML=`<b>${d.product}</b><br>${d.site}<br>${d.date}<br><img src="${d.img}">`;
+
+ const p=d.product;
+ links.innerHTML=`
+ <a href="https://www.google.com/search?q=${p}+仕様書+pdf" target="_blank">仕様書</a>
+ <a href="https://www.google.com/search?q=${p}+寸法図+pdf" target="_blank">寸法図</a>
+ <a href="https://www.google.com/search?q=${p}+配線図" target="_blank">配線図</a>`;
+}
+
+// 保存
+function save(d){
+ const tx=db.transaction("r","readwrite");
+ tx.objectStore("r").add(d);
+ tx.oncomplete=load;
+}
+
+// 履歴
+function load(){
+ const tx=db.transaction("r","readonly");
+ const r=tx.objectStore("r").getAll();
+ r.onsuccess=()=>{
+  history.innerHTML=r.result.reverse().map(x=>`
+   <div class="card">
+    ${x.site}<br>${x.product}<br>${x.date}
+    <button onclick="reuse('${x.product}','${x.site}')">再利用</button>
+   </div>`).join("");
+ };
+}
+
+function reuse(p,s){
+ manual.value=p;
+ site.value=s;
+}
+
+// LINE
+async function shareLine(){
+ if(!last) return alert("なし");
+ const text=`${last.site}\n${last.product}\n${last.date}`;
+ if(navigator.share){
+  await navigator.share({text});
+ }else{
+  window.open("https://line.me/R/msg/text/?"+encodeURIComponent(text));
+ }
+}
+
+// 印刷
+function printData(){
+ if(!last) return alert("なし");
+ const w=window.open("");
+ w.document.write(`
+  <h2>${last.site}</h2>
+  <p>${last.product}</p>
+  <p>${last.date}</p>
+  <img src="${last.img}" style="width:300px">
+ `);
+ w.print();
+ w.close();
+}
 </script>
 
 </body>
