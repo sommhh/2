@@ -1,180 +1,149 @@
 <!DOCTYPE html>
+
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>電材スキャンULTIMATE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>電材スキャンPRO 完成版</title>
 
 <style>
-body{margin:0;background:#111;color:#fff;font-family:sans-serif;text-align:center;}
-.wrap{padding:10px;max-width:900px;margin:auto;}
-button{width:100%;padding:14px;margin:5px;border:none;border-radius:10px;background:#00c853;color:#fff;font-size:16px;}
-input{width:100%;padding:10px;margin:5px;border-radius:8px;border:none;}
-video{width:100%;max-height:40vh;}
-a{display:block;background:#2962ff;margin:5px;padding:10px;border-radius:8px;color:#fff;text-decoration:none;}
-.card{background:#222;padding:10px;margin:8px 0;border-radius:10px;}
-img{max-width:200px;border-radius:8px;}
+:root{
+  --bg:#101418;--card:#1b2229;--line:#2e3a45;
+  --text:#f5f7fa;--sub:#a7b3bf;
+  --ok:#00c853;--blue:#2962ff;--orange:#ff9800;--danger:#ff5252;
+}
+body{margin:0;background:var(--bg);color:var(--text);font-family:sans-serif;text-align:center}
+.wrap{max-width:840px;margin:auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin:10px 0}
+input,button{width:100%;padding:14px;margin:6px 0;border-radius:10px;border:none;font-size:16px}
+button{background:var(--ok);color:#fff}
+.secondary{background:var(--blue)}
+.orange{background:var(--orange)}
+.dark{background:#455a64}
+.danger{background:var(--danger)}
+video{width:100%;max-height:48vh;background:#000;border-radius:12px}
+.links a{display:block;background:var(--blue);margin:6px 0;padding:10px;border-radius:10px;color:#fff;text-decoration:none}
 </style>
+
 </head>
 
 <body>
 <div class="wrap">
+<h2>📷 電材スキャンPRO 完成版</h2>
 
-<h2>📷 電材スキャンULTIMATE</h2>
-
+<div class="card">
 <input id="site" placeholder="現場名">
-<input id="manual" placeholder="品番入力">
+<input id="manual" placeholder="品番・商品名入力">
+</div>
 
-<button onclick="startCamera()">カメラ</button>
-<button onclick="scan()">スキャン</button>
-<button onclick="shareLine()">LINE送信</button>
-<button onclick="printData()">印刷</button>
-<button onclick="stopCamera()">停止</button>
+<div class="card">
+<button onclick="startCamera()">カメラ起動</button>
+<button class="secondary" onclick="scan()">スキャン</button>
+<button class="orange" onclick="manualSearch()">検索</button>
+<button class="dark" onclick="share()">LINE共有</button>
+<button class="danger" onclick="stopCamera()">停止</button>
+</div>
+
+<div class="card">
+<label><input type="checkbox" id="modeMaker" checked> メーカー優先</label><br>
+<label><input type="checkbox" id="modeJP" checked> 日本語OK</label><br>
+<label><input type="checkbox" id="modeAll"> 全検索</label>
+</div>
 
 <video id="video" autoplay playsinline></video>
-<canvas id="canvas" style="display:none"></canvas>
 
-<div id="result"></div>
-<div id="links"></div>
-<div id="history"></div>
+<div id="status"></div>
+<div class="card" id="links"></div>
 
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <script>
-let db,stream,worker,last;
 
-// DB
-const req=indexedDB.open("db",1);
-req.onupgradeneeded=e=>{
- db=e.target.result;
- db.createObjectStore("r",{keyPath:"id",autoIncrement:true});
-};
-req.onsuccess=e=>{db=e.target.result;load();};
+let stream,worker;
 
-// カメラ
+const makers=["パナソニック","Panasonic","東芝","三菱電機","未来工業","ネグロス","テンパール","河村電器","オーデリック","大光電機","神保電器"];
+
+function extractJP(t){return (t.match(/[\u3040-\u30FF\u4E00-\u9FFF]{2,}/g)||[]);}
+
 async function startCamera(){
- if(stream) return;
- stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
- video.srcObject=stream;
-}
-function stopCamera(){
- if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
- video.srcObject=null;
+stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+video.srcObject=stream;
 }
 
-// OCR
+function stopCamera(){if(stream)stream.getTracks().forEach(t=>t.stop());}
+
 async function getWorker(){
- if(worker) return worker;
- worker=await Tesseract.createWorker("eng");
- await worker.setParameters({tessedit_char_whitelist:"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-/"});
- return worker;
+if(worker)return worker;
+worker=await Tesseract.createWorker("eng");
+return worker;
 }
 
-// スキャン
 async function scan(){
- const ctx=canvas.getContext("2d");
- canvas.width=video.videoWidth;
- canvas.height=video.videoHeight;
- ctx.drawImage(video,0,0);
+status.innerText="読み取り中...";
+const canvas=document.createElement("canvas");
+canvas.width=video.videoWidth;
+canvas.height=video.videoHeight;
+canvas.getContext("2d").drawImage(video,0,0);
 
- let product="";
+const w=await getWorker();
+const ret=await w.recognize(canvas);
+const text=ret.data.text||"";
 
- // バーコード
- if("BarcodeDetector" in window){
-  try{
-   const d=new BarcodeDetector();
-   const r=await d.detect(canvas);
-   if(r.length) product=r[0].rawValue;
-  }catch{}
- }
+const code=(text.match(/[A-Z0-9\-]{4,}/)||[""])[0];
+manual.value=code;
 
- // OCR
- if(!product){
-  const w=await getWorker();
-  const r=await w.recognize(canvas);
-  product=r.data.text.replace(/\s/g,"")
-   .replace(/O/g,"0").replace(/[IL]/g,"1")
-   .toUpperCase().trim();
- }
-
- if(!product) product=prompt("品番入力")||"";
-
- manual.value=product;
-
- const data={
-  product,
-  site:site.value||"未設定",
-  date:new Date().toLocaleString(),
-  img:canvas.toDataURL("image/jpeg",0.8)
- };
-
- last=data;
- save(data);
- show(data);
+render(code,text);
+status.innerText="完了";
 }
 
-// 表示
-function show(d){
- result.innerHTML=`<b>${d.product}</b><br>${d.site}<br>${d.date}<br><img src="${d.img}">`;
+function buildQueries(p,text){
+let q=[];
+const jp=extractJP(text);
 
- const p=d.product;
- links.innerHTML=`
- <a href="https://www.google.com/search?q=${p}+仕様書+pdf" target="_blank">仕様書</a>
- <a href="https://www.google.com/search?q=${p}+寸法図+pdf" target="_blank">寸法図</a>
- <a href="https://www.google.com/search?q=${p}+配線図" target="_blank">配線図</a>`;
+const maker=modeMaker.checked;
+const jpMode=modeJP.checked;
+const all=modeAll.checked;
+
+if(all){
+if(p)q.push(p);
+jp.forEach(w=>q.push(w));
+}else{
+if(maker){
+makers.forEach(m=>{
+if(p)q.push(m+" "+p);
+if(jpMode)jp.forEach(w=>q.push(m+" "+w));
+});
+}
+if(p)q.push(p);
+if(jpMode)jp.forEach(w=>q.push(w));
 }
 
-// 保存
-function save(d){
- const tx=db.transaction("r","readwrite");
- tx.objectStore("r").add(d);
- tx.oncomplete=load;
+return [...new Set(q)].slice(0,10);
 }
 
-// 履歴
-function load(){
- const tx=db.transaction("r","readonly");
- const r=tx.objectStore("r").getAll();
- r.onsuccess=()=>{
-  history.innerHTML=r.result.reverse().map(x=>`
-   <div class="card">
-    ${x.site}<br>${x.product}<br>${x.date}
-    <button onclick="reuse('${x.product}','${x.site}')">再利用</button>
-   </div>`).join("");
- };
+function render(p,text){
+const qs=buildQueries(p,text);
+
+links.innerHTML=qs.map(q=>
+`<a href="https://www.google.com/search?q=${encodeURIComponent(q+" 仕様書 図面")}" target="_blank">🔎 ${q}</a>`
+).join("");
 }
 
-function reuse(p,s){
- manual.value=p;
- site.value=s;
+function manualSearch(){
+render(manual.value,"");
 }
 
-// LINE
-async function shareLine(){
- if(!last) return alert("なし");
- const text=`${last.site}\n${last.product}\n${last.date}`;
- if(navigator.share){
-  await navigator.share({text});
- }else{
-  window.open("https://line.me/R/msg/text/?"+encodeURIComponent(text));
- }
+async function share(){
+const txt=site.value+"\n"+manual.value;
+if(navigator.share){
+await navigator.share({text:txt});
+}else{
+window.open("https://line.me/R/msg/text/?"+encodeURIComponent(txt));
+}
 }
 
-// 印刷
-function printData(){
- if(!last) return alert("なし");
- const w=window.open("");
- w.document.write(`
-  <h2>${last.site}</h2>
-  <p>${last.product}</p>
-  <p>${last.date}</p>
-  <img src="${last.img}" style="width:300px">
- `);
- w.print();
- w.close();
-}
 </script>
 
 </body>
