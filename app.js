@@ -2,9 +2,9 @@
   "use strict";
 
   const STORAGE_KEYS = {
-    current: "denzai_current_v3",
-    history: "denzai_history_v3",
-    freq: "denzai_freq_v3"
+    current: "denzai_current_v4",
+    history: "denzai_history_v4",
+    freq: "denzai_freq_v4"
   };
 
   const $ = id => document.getElementById(id);
@@ -34,6 +34,7 @@
   let stream = null;
   let worker = null;
   let products = [];
+  let currentScanCandidates = [];
 
   function load(key, fallback){
     try{
@@ -83,8 +84,12 @@
     return normalizeCode(str).replace(/[-_/.\u30FC]/g,"");
   }
 
-  function setStatus(msg){
+  function setStatus(msg, type="info"){
     els.status.textContent = msg || "";
+    els.status.style.color =
+      type === "success" ? "#69f0ae" :
+      type === "error" ? "#ff8a80" :
+      "#90caf9";
   }
 
   function scoreCode(c){
@@ -188,7 +193,7 @@
     }catch(e){
       console.error(e);
       products = [];
-      setStatus("辞書読込失敗");
+      setStatus("辞書読込失敗", "error");
     }
   }
 
@@ -219,7 +224,7 @@
       setStatus("カメラ起動中");
     }catch(e){
       console.error(e);
-      setStatus("カメラ起動失敗");
+      setStatus("カメラ起動失敗", "error");
       alert("カメラを起動できませんでした。ブラウザのカメラ許可を確認してください。");
     }
   }
@@ -309,40 +314,62 @@
       const ret = await w.recognize(processed);
       const text = ret?.data?.text || "";
       const codes = extractCodes(text);
-      const best = codes[0] || "";
 
-      els.manual.value = best;
-      renderCandidates(codes, text);
-      renderMatches(best);
-      renderLinks(best);
-      setStatus(best ? "読取完了" : "候補なし");
+      currentScanCandidates = codes.slice(0, 8);
+
+      renderCandidates();
+      setStatus(currentScanCandidates.length ? "候補を取得しました" : "候補なし");
     }catch(e){
       console.error(e);
-      setStatus("読取失敗");
+      setStatus("読取失敗", "error");
       alert("読み取りに失敗しました。明るい場所で、品番を中央に大きく写して再度お試しください。");
     }
   }
 
-  function renderCandidates(codes, rawText){
+  function renderCandidates(){
     els.ocrBox.style.display = "block";
-    if(!codes.length){
+
+    if(!currentScanCandidates.length){
       els.ocrCandidates.innerHTML = `
         <div class="item">
           <div class="item-meta">候補なし</div>
-          <div class="item-meta">OCR結果: ${escapeHtml(rawText || "")}</div>
         </div>
       `;
       return;
     }
 
-    els.ocrCandidates.innerHTML = codes.slice(0,8).map(code => `
+    els.ocrCandidates.innerHTML = currentScanCandidates.map((code, index) => `
       <div class="item">
         <div class="item-code">${escapeHtml(code)}</div>
         <div class="item-actions">
-          <button class="btn-blue" onclick="window.pickCode('${escapeHtml(code)}')">この候補を使う</button>
+          <button class="btn-green" onclick="window.useScanCandidate(${index})">この候補を使う</button>
+          <button class="btn-red" onclick="window.removeScanCandidate(${index})">消す</button>
         </div>
       </div>
     `).join("");
+  }
+
+  function removeScanCandidate(index){
+    currentScanCandidates.splice(index, 1);
+    renderCandidates();
+    setStatus("候補を削除しました", "success");
+  }
+
+  function useScanCandidate(index){
+    const code = currentScanCandidates[index];
+    if(!code) return;
+
+    const normalized = normalizeCode(code);
+    els.manual.value = normalized;
+
+    renderLinks(normalized);
+    renderMatches(normalized);
+    addCurrentItem(normalized);
+
+    currentScanCandidates.splice(index, 1);
+    renderCandidates();
+
+    setStatus(`追加しました: ${normalized}`, "success");
   }
 
   function renderMatches(input){
@@ -366,7 +393,7 @@
         <div class="item-code">${escapeHtml(item.code)} / ${escapeHtml(item.name || "")}</div>
         <div class="item-meta">${escapeHtml(item.maker || "")} / ${escapeHtml(item.category || "")} / 一致度 ${item.score}</div>
         <div class="item-actions">
-          <button class="btn-green" onclick="window.useProductCode('${escapeHtml(item.code)}')">この品番を使う</button>
+          <button class="btn-blue" onclick="window.useProductCode('${escapeHtml(item.code)}')">この品番を使う</button>
         </div>
       </div>
     `).join("");
@@ -463,9 +490,6 @@
     addFreq(p);
     renderCurrent();
     buildOrderText();
-    renderLinks(p);
-    renderMatches(p);
-    setStatus("リストに追加しました");
   }
 
   function updateQty(id, delta){
@@ -564,7 +588,7 @@
   async function copyText(text){
     try{
       await navigator.clipboard.writeText(text);
-      setStatus("コピーしました");
+      setStatus("コピーしました", "success");
     }catch(e){
       const ta = document.createElement("textarea");
       ta.value = text;
@@ -574,7 +598,7 @@
       ta.select();
       document.execCommand("copy");
       ta.remove();
-      setStatus("コピーしました");
+      setStatus("コピーしました", "success");
     }
   }
 
@@ -598,7 +622,7 @@
     });
     saveHistory(history);
     renderHistory();
-    setStatus("履歴に保存しました");
+    setStatus("履歴に保存しました", "success");
   }
 
   function removeHistory(id){
@@ -622,7 +646,7 @@
     els.remarks.value = item.remarks || "";
     renderCurrent();
     buildOrderText();
-    setStatus("履歴を読み込みました");
+    setStatus("履歴を読み込みました", "success");
   }
 
   function renderHistory(){
@@ -655,13 +679,20 @@
     $("startBtn").addEventListener("click", startCamera);
     $("scanBtn").addEventListener("click", scan);
     $("stopBtn").addEventListener("click", stopCamera);
+
     $("searchBtn").addEventListener("click", () => {
       renderLinks(els.manual.value);
       renderMatches(els.manual.value);
     });
-    $("addBtn").addEventListener("click", () => addCurrentItem(els.manual.value));
+
+    $("addBtn").addEventListener("click", () => {
+      addCurrentItem(els.manual.value);
+      setStatus(`追加しました: ${normalizeCode(els.manual.value)}`, "success");
+    });
+
     $("buildOrderBtn").addEventListener("click", buildOrderText);
     $("saveHistoryBtn").addEventListener("click", saveCurrentToHistory);
+
     $("copyBtn").addEventListener("click", () => {
       const text = buildOrderText();
       if(!text){
@@ -670,10 +701,12 @@
       }
       copyText(text);
     });
+
     $("printBtn").addEventListener("click", () => {
       buildOrderText();
       window.print();
     });
+
     $("clearCurrentBtn").addEventListener("click", clearCurrent);
     $("clearHistoryBtn").addEventListener("click", clearHistory);
 
@@ -695,9 +728,20 @@
   };
 
   window.useProductCode = function(code){
-    els.manual.value = normalizeCode(code);
-    renderLinks(els.manual.value);
-    renderMatches(els.manual.value);
+    const normalized = normalizeCode(code);
+    els.manual.value = normalized;
+    addCurrentItem(normalized);
+    renderLinks(normalized);
+    renderMatches(normalized);
+    setStatus(`追加しました: ${normalized}`, "success");
+  };
+
+  window.useScanCandidate = function(index){
+    useScanCandidate(index);
+  };
+
+  window.removeScanCandidate = function(index){
+    removeScanCandidate(index);
   };
 
   window.changeQty = function(id, delta){
