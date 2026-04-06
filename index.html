@@ -101,6 +101,7 @@ video{
   background:#000;
   border-radius:12px;
   margin-top:10px;
+  object-fit:cover;
 }
 .small{
   font-size:12px;
@@ -304,21 +305,44 @@ video{
   "use strict";
 
   const PRODUCTS = [
-    // Panasonic
+    // Panasonic 配線器具・プレート系 増量
     { code:"WTF1502WK", name:"コスモシリーズワイド21 埋込ダブルコンセント", maker:"Panasonic", category:"配線器具", aliases:["WTF1502","WTFI502WK","WTF-1502WK"] },
+    { code:"WTF1502FK", name:"コスモシリーズワイド21 埋込ダブルコンセント", maker:"Panasonic", category:"配線器具", aliases:["WTF1502F","WTF-1502FK"] },
+    { code:"WTF1502HK", name:"コスモシリーズワイド21 埋込ダブルコンセント", maker:"Panasonic", category:"配線器具", aliases:["WTF1502H","WTF-1502HK"] },
+    { code:"WTF1502GK", name:"コスモシリーズワイド21 埋込ダブルコンセント", maker:"Panasonic", category:"配線器具", aliases:["WTF1502G","WTF-1502GK"] },
     { code:"WT50519", name:"コスモシリーズワイド21 埋込ほたるスイッチB", maker:"Panasonic", category:"配線器具", aliases:["WT5051","WT5O519","WT-50519"] },
+    { code:"WT50529", name:"コスモシリーズワイド21 埋込ほたるスイッチC", maker:"Panasonic", category:"配線器具", aliases:["WT5052","WT-50529"] },
+    { code:"WT50539", name:"コスモシリーズワイド21 埋込ほたるトリプルスイッチ", maker:"Panasonic", category:"配線器具", aliases:["WT5053","WT-50539"] },
     { code:"WTA5051", name:"アドバンスシリーズ スイッチ", maker:"Panasonic", category:"配線器具", aliases:["WTA5O51","WTA-5051"] },
-    { code:"WTA3700K", name:"アドバンスシリーズ プレート", maker:"Panasonic", category:"配線器具", aliases:["WTA37O0K","WTA-3700K"] },
+    { code:"WTA5052", name:"アドバンスシリーズ スイッチ", maker:"Panasonic", category:"配線器具", aliases:["WTA-5052"] },
+    { code:"WTA5053", name:"アドバンスシリーズ スイッチ", maker:"Panasonic", category:"配線器具", aliases:["WTA-5053"] },
+    { code:"WTA3700K", name:"アドバンスシリーズ プレート", maker:"Panasonic", category:"プレート", aliases:["WTA37O0K","WTA-3700K"] },
+    { code:"WTA7101WK", name:"アドバンスシリーズ スイッチプレート 1連用", maker:"Panasonic", category:"プレート", aliases:["WTA7101","WTA-7101WK"] },
+    { code:"WTA7102WK", name:"アドバンスシリーズ スイッチプレート 2連用", maker:"Panasonic", category:"プレート", aliases:["WTA7102","WTA-7102WK"] },
+    { code:"WTA7103WK", name:"アドバンスシリーズ スイッチプレート 3連用", maker:"Panasonic", category:"プレート", aliases:["WTA7103","WTA-7103WK"] },
     { code:"WN5001", name:"埋込コンセント", maker:"Panasonic", category:"配線器具", aliases:["WN5OO1","WN-5001"] },
-    { code:"WN6001W", name:"モダンプレート", maker:"Panasonic", category:"配線器具", aliases:["WN6OO1W","WN-6001W"] },
+    { code:"WN5002", name:"埋込ダブルコンセント", maker:"Panasonic", category:"配線器具", aliases:["WN-5002"] },
+    { code:"WN5003", name:"埋込トリプルコンセント", maker:"Panasonic", category:"配線器具", aliases:["WN-5003"] },
+    { code:"WN6001W", name:"モダンプレート 1コ用", maker:"Panasonic", category:"プレート", aliases:["WN6OO1W","WN-6001W"] },
+    { code:"WN6002W", name:"モダンプレート 2コ用", maker:"Panasonic", category:"プレート", aliases:["WN-6002W"] },
+    { code:"WN6003W", name:"モダンプレート 3コ用", maker:"Panasonic", category:"プレート", aliases:["WN-6003W"] },
     { code:"WK3001W", name:"防雨スイッチ", maker:"Panasonic", category:"配線器具", aliases:["WK3OO1W","WK-3001W"] },
+    { code:"WK3002W", name:"防雨ダブルスイッチ", maker:"Panasonic", category:"配線器具", aliases:["WK-3002W"] },
     { code:"WK4102K", name:"防雨コンセント", maker:"Panasonic", category:"配線器具", aliases:["WK41O2K","WK-4102K"] },
+    { code:"WK4105K", name:"防雨接地コンセント", maker:"Panasonic", category:"配線器具", aliases:["WK-4105K"] },
     { code:"WTC7101W", name:"コスモシリーズワイド21 スイッチプレート 1連用", maker:"Panasonic", category:"プレート", aliases:["WTC7101","WTC-7101W"] },
     { code:"WTC7102W", name:"コスモシリーズワイド21 スイッチプレート 2連用", maker:"Panasonic", category:"プレート", aliases:["WTC7102","WTC-7102W"] },
     { code:"WTC7103W", name:"コスモシリーズワイド21 スイッチプレート 3連用", maker:"Panasonic", category:"プレート", aliases:["WTC7103","WTC-7103W"] },
-    { code:"WTF7003W", name:"コスモシリーズワイド21 コンセントプレート 3コ用", maker:"Panasonic", category:"プレート", aliases:["WTF7003","WTF-7003W"] },
-    { code:"WTF7002W", name:"コスモシリーズワイド21 コンセントプレート 2コ用", maker:"Panasonic", category:"プレート", aliases:["WTF7002","WTF-7002W"] },
+    { code:"WTC7301W", name:"コスモシリーズワイド21 ラウンドプレート 1連用", maker:"Panasonic", category:"プレート", aliases:["WTC7301","WTC-7301W"] },
+    { code:"WTC7302W", name:"コスモシリーズワイド21 ラウンドプレート 2連用", maker:"Panasonic", category:"プレート", aliases:["WTC7302","WTC-7302W"] },
+    { code:"WTC7303W", name:"コスモシリーズワイド21 ラウンドプレート 3連用", maker:"Panasonic", category:"プレート", aliases:["WTC7303","WTC-7303W"] },
     { code:"WTF7001W", name:"コスモシリーズワイド21 コンセントプレート 1コ用", maker:"Panasonic", category:"プレート", aliases:["WTF7001","WTF-7001W"] },
+    { code:"WTF7002W", name:"コスモシリーズワイド21 コンセントプレート 2コ用", maker:"Panasonic", category:"プレート", aliases:["WTF7002","WTF-7002W"] },
+    { code:"WTF7003W", name:"コスモシリーズワイド21 コンセントプレート 3コ用", maker:"Panasonic", category:"プレート", aliases:["WTF7003","WTF-7003W"] },
+    { code:"WTF3710K", name:"絶縁取付枠", maker:"Panasonic", category:"取付枠", aliases:["WTF-3710K"] },
+    { code:"WTF3710FK", name:"絶縁取付枠", maker:"Panasonic", category:"取付枠", aliases:["WTF-3710FK"] },
+    { code:"WTF3710HK", name:"絶縁取付枠", maker:"Panasonic", category:"取付枠", aliases:["WTF-3710HK"] },
+    { code:"WTF3710GK", name:"絶縁取付枠", maker:"Panasonic", category:"取付枠", aliases:["WTF-3710GK"] },
 
     // 未来工業
     { code:"PF-16", name:"PF管 16", maker:"未来工業", category:"配管部材", aliases:["PF16","PF-I6","PF 16"] },
@@ -343,9 +367,9 @@ video{
   ];
 
   const STORAGE_KEYS = {
-    current: "denzai_current_stable_v2",
-    history: "denzai_history_stable_v2",
-    freq: "denzai_freq_stable_v2"
+    current: "denzai_current_stable_v3",
+    history: "denzai_history_stable_v3",
+    freq: "denzai_freq_stable_v3"
   };
 
   const $ = id => document.getElementById(id);
@@ -384,6 +408,7 @@ video{
   let worker = null;
   let currentScanCandidates = [];
   let isScanning = false;
+  let isStartingCamera = false;
 
   function load(key, fallback){
     try{
@@ -439,6 +464,10 @@ video{
       type === "success" ? "#69f0ae" :
       type === "error" ? "#ff8a80" :
       "#90caf9";
+  }
+
+  function isSecureContextLike(){
+    return location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
   }
 
   function scoreCode(code){
@@ -575,24 +604,115 @@ video{
     return worker;
   }
 
-  async function startCamera(){
+  async function attachStreamToVideo(s){
+    els.video.setAttribute("playsinline", "true");
+    els.video.setAttribute("muted", "true");
+    els.video.muted = true;
+    els.video.autoplay = true;
+    els.video.srcObject = s;
+
     try{
-      stopCamera();
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        },
-        audio: false
-      });
-      els.video.srcObject = stream;
       await els.video.play();
-      setStatus("カメラ起動中");
+    }catch(e){
+      await new Promise(resolve => setTimeout(resolve, 200));
+      await els.video.play();
+    }
+
+    await new Promise((resolve) => {
+      if(els.video.readyState >= 2) return resolve();
+      const onLoaded = () => {
+        els.video.removeEventListener("loadedmetadata", onLoaded);
+        resolve();
+      };
+      els.video.addEventListener("loadedmetadata", onLoaded);
+      setTimeout(resolve, 1200);
+    });
+  }
+
+  async function tryGetUserMedia(constraintsList){
+    let lastError = null;
+
+    for(let i = 0; i < constraintsList.length; i++){
+      try{
+        const s = await navigator.mediaDevices.getUserMedia(constraintsList[i]);
+        return s;
+      }catch(e){
+        lastError = e;
+      }
+    }
+
+    throw lastError || new Error("camera_start_failed");
+  }
+
+  async function startCamera(){
+    if(isStartingCamera) return;
+    isStartingCamera = true;
+    els.startBtn.disabled = true;
+
+    try{
+      if(!isSecureContextLike()){
+        throw new Error("insecure_context");
+      }
+
+      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        throw new Error("camera_unsupported");
+      }
+
+      stopCamera();
+
+      setStatus("カメラ起動中...");
+
+      const constraintsList = [
+        {
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          },
+          audio: false
+        },
+        {
+          video: {
+            facingMode: "environment",
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        },
+        {
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        },
+        {
+          video: true,
+          audio: false
+        }
+      ];
+
+      stream = await tryGetUserMedia(constraintsList);
+      await attachStreamToVideo(stream);
+
+      setStatus("カメラ起動中", "success");
     }catch(e){
       console.error(e);
-      setStatus("カメラ起動失敗", "error");
-      alert("カメラを起動できませんでした。ブラウザのカメラ許可を確認してください。");
+      stopCamera();
+
+      if(String(e && e.message) === "insecure_context"){
+        setStatus("HTTPSまたはlocalhostで開いてください", "error");
+        alert("カメラは HTTPS または localhost で開く必要があります。");
+      }else if(String(e && e.message) === "camera_unsupported"){
+        setStatus("このブラウザはカメラ非対応です", "error");
+        alert("このブラウザではカメラ機能が使えません。");
+      }else{
+        setStatus("カメラ起動失敗", "error");
+        alert("カメラを起動できませんでした。ブラウザのカメラ許可、HTTPS、端末の設定を確認してください。");
+      }
+    }finally{
+      isStartingCamera = false;
+      els.startBtn.disabled = false;
     }
   }
 
@@ -601,7 +721,10 @@ video{
       stream.getTracks().forEach(t => t.stop());
       stream = null;
     }
-    els.video.srcObject = null;
+    if(els.video){
+      els.video.pause();
+      els.video.srcObject = null;
+    }
     setStatus("カメラ停止");
   }
 
@@ -697,8 +820,13 @@ video{
   async function scan(){
     if(isScanning) return;
 
-    if(!els.video.videoWidth){
+    if(!stream || !els.video.srcObject){
       alert("先にカメラを起動してください");
+      return;
+    }
+
+    if(!els.video.videoWidth || els.video.readyState < 2){
+      alert("カメラ映像の準備がまだできていません。少し待ってから再度お試しください。");
       return;
     }
 
@@ -782,4 +910,485 @@ video{
           <div class="item-meta">${escapeHtml(maker)}${maker && category ? " / " : ""}${escapeHtml(category)}</div>
           <div class="item-meta">${escapeHtml(name)}</div>
           <div class="item-actions">
-            <button class="btn-green" onclick="window.useScanCandidate(${i})">この候補を使う
+            <button class="btn-green" onclick="window.useScanCandidate(${i})">この候補を使う</button>
+            <button class="btn-red" onclick="window.removeScanCandidate(${i})">消す</button>
+          </div>
+        </div>
+      `;
+    }
+
+    els.ocrCandidates.innerHTML = html;
+  }
+
+  function renderLinks(code){
+    const p = normalizeCode(code);
+    if(!p){
+      els.linksBox.style.display = "none";
+      els.links.innerHTML = "";
+      return;
+    }
+
+    els.linksBox.style.display = "block";
+    const q1 = encodeURIComponent(p);
+    const q2 = encodeURIComponent(p + " 仕様書");
+    const q3 = encodeURIComponent(p + " 図面");
+    const q4 = encodeURIComponent(p + " Panasonic 未来工業 JIMBO テンパール");
+
+    els.links.innerHTML = `
+      <a href="https://www.google.com/search?q=${q1}" target="_blank" rel="noopener">検索</a>
+      <a href="https://www.google.com/search?q=${q2}" target="_blank" rel="noopener">仕様書</a>
+      <a href="https://www.google.com/search?q=${q3}" target="_blank" rel="noopener">図面</a>
+      <a href="https://www.google.com/search?q=${q4}" target="_blank" rel="noopener">メーカー検索</a>
+    `;
+  }
+
+  function getCurrent(){
+    return load(STORAGE_KEYS.current, []);
+  }
+
+  function saveCurrent(list){
+    save(STORAGE_KEYS.current, list);
+  }
+
+  function getHistory(){
+    cleanupHistory();
+    return load(STORAGE_KEYS.history, []);
+  }
+
+  function saveHistory(list){
+    save(STORAGE_KEYS.history, list);
+  }
+
+  function getFreq(){
+    return load(STORAGE_KEYS.freq, {});
+  }
+
+  function saveFreq(obj){
+    save(STORAGE_KEYS.freq, obj);
+  }
+
+  function cleanupHistory(){
+    const oneYear = 365 * 24 * 60 * 60 * 1000;
+    const list = load(STORAGE_KEYS.history, []);
+    const filtered = list.filter(v => {
+      const t = new Date(v.createdAt).getTime();
+      return Date.now() - t <= oneYear;
+    });
+    saveHistory(filtered);
+  }
+
+  function addFreq(code){
+    const p = normalizeCode(code);
+    if(!p) return;
+    const freq = getFreq();
+    freq[p] = (freq[p] || 0) + 1;
+    saveFreq(freq);
+    renderSuggestions();
+  }
+
+  function renderSuggestions(){
+    const freq = getFreq();
+    const entries = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 12);
+
+    if(!entries.length){
+      els.suggestions.innerHTML = '<span class="small">まだ候補はありません。</span>';
+      return;
+    }
+
+    els.suggestions.innerHTML = entries.map(([code, count]) =>
+      `<span class="suggest-chip" onclick="window.pickSuggestion('${escapeHtml(code)}')">${escapeHtml(code)} (${count})</span>`
+    ).join("");
+  }
+
+  function addCurrentItem(code){
+    const p = normalizeCode(code);
+    if(!p) return null;
+
+    const info = getBestProductInfo(p);
+    const list = getCurrent();
+
+    for(let i = 0; i < list.length; i++){
+      if(list[i].code === p){
+        list[i].qty = (list[i].qty || 1) + 1;
+        list[i].updatedAt = nowIso();
+        if(info){
+          if(!list[i].name) list[i].name = info.name || "";
+          if(!list[i].maker) list[i].maker = info.maker || "";
+          if(!list[i].category) list[i].category = info.category || "";
+        }
+        saveCurrent(list);
+        addFreq(p);
+        renderCurrent();
+        buildOrderText();
+        return list[i].id;
+      }
+    }
+
+    const id = String(Date.now()) + "_" + Math.random().toString(16).slice(2);
+
+    list.unshift({
+      id: id,
+      code: p,
+      name: info && info.name ? info.name : "",
+      maker: info && info.maker ? info.maker : "",
+      category: info && info.category ? info.category : "",
+      qty: 1,
+      createdAt: nowIso(),
+      updatedAt: nowIso()
+    });
+
+    saveCurrent(list);
+    addFreq(p);
+    renderCurrent();
+    buildOrderText();
+    return id;
+  }
+
+  function flashAddedRow(id){
+    if(!id) return;
+    const nodes = document.querySelectorAll("[data-item-id]");
+    for(let i = 0; i < nodes.length; i++){
+      if(nodes[i].getAttribute("data-item-id") === id){
+        nodes[i].classList.add("flash");
+        if(nodes[i].scrollIntoView){
+          nodes[i].scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+        setTimeout(() => {
+          nodes[i].classList.remove("flash");
+        }, 1200);
+        break;
+      }
+    }
+  }
+
+  function addManualInput(){
+    const normalized = normalizeCode(els.manual.value);
+    if(!normalized){
+      setStatus("品番を入力してください", "error");
+      return;
+    }
+
+    renderLinks(normalized);
+    const addedId = addCurrentItem(normalized);
+    flashAddedRow(addedId);
+    setStatus("追加しました: " + normalized, "success");
+    els.manual.value = "";
+  }
+
+  function useScanCandidate(index){
+    if(index < 0 || index >= currentScanCandidates.length) return;
+
+    const normalized = normalizeCode(currentScanCandidates[index]);
+    if(!normalized){
+      setStatus("空の候補は追加できません", "error");
+      return;
+    }
+
+    els.manual.value = normalized;
+    renderLinks(normalized);
+
+    const addedId = addCurrentItem(normalized);
+
+    currentScanCandidates.splice(index, 1);
+    renderCandidates();
+
+    flashAddedRow(addedId);
+    setStatus("追加しました: " + normalized, "success");
+    els.manual.value = "";
+  }
+
+  function removeScanCandidate(index){
+    if(index < 0 || index >= currentScanCandidates.length) return;
+    currentScanCandidates.splice(index, 1);
+    renderCandidates();
+    setStatus("候補を削除しました", "success");
+  }
+
+  function updateQty(id, delta){
+    const list = getCurrent();
+    for(let i = 0; i < list.length; i++){
+      if(list[i].id === id){
+        list[i].qty = Math.max(1, (list[i].qty || 1) + delta);
+        list[i].updatedAt = nowIso();
+        break;
+      }
+    }
+    saveCurrent(list);
+    renderCurrent();
+    buildOrderText();
+  }
+
+  function removeCurrent(id){
+    const list = getCurrent().filter(v => v.id !== id);
+    saveCurrent(list);
+    renderCurrent();
+    buildOrderText();
+  }
+
+  function clearCurrent(){
+    if(!confirm("現在リストを全削除しますか？")) return;
+    saveCurrent([]);
+    renderCurrent();
+    buildOrderText();
+    setStatus("現在リストを全削除しました", "success");
+  }
+
+  function renderCurrent(){
+    const list = getCurrent();
+    els.currentCount.textContent = list.length + "件";
+
+    if(!list.length){
+      els.currentList.innerHTML = '<div class="small">まだ追加されていません。</div>';
+      return;
+    }
+
+    let html = "";
+    for(let i = 0; i < list.length; i++){
+      const item = list[i];
+      html += `
+        <div class="item" data-item-id="${escapeHtml(item.id)}">
+          <div class="item-code">${escapeHtml(item.code)}${item.name ? " / " + escapeHtml(item.name) : ""}</div>
+          <div class="item-meta">${escapeHtml(item.maker || "")}${item.category ? " / " + escapeHtml(item.category) : ""}</div>
+          <div class="item-meta">数量: ${item.qty || 1} / 追加: ${formatDate(item.createdAt)}</div>
+          <div class="item-actions no-print">
+            <button class="btn-gray" onclick="window.changeQty('${item.id}',-1)">-1</button>
+            <button class="btn-green" onclick="window.changeQty('${item.id}',1)">+1</button>
+            <button class="btn-red" onclick="window.removeCurrentItem('${item.id}')">削除</button>
+            <a class="btn btn-blue" href="https://www.google.com/search?q=${encodeURIComponent(item.code)}" target="_blank" rel="noopener">検索</a>
+          </div>
+        </div>
+      `;
+    }
+    els.currentList.innerHTML = html;
+  }
+
+  function buildOrderText(){
+    const company = els.companyName.value.trim();
+    const person = els.personName.value.trim();
+    const remarks = els.remarks.value.trim();
+    const list = getCurrent();
+
+    if(!list.length){
+      els.orderPreview.textContent = "ここに注文文が表示されます。";
+      updateLineLink("");
+      return "";
+    }
+
+    const lines = [];
+    lines.push("【注文リスト】");
+    if(company) lines.push("会社名: " + company);
+    if(person) lines.push("担当者: " + person);
+    lines.push("");
+    lines.push("■品番一覧");
+
+    for(let i = 0; i < list.length; i++){
+      const item = list[i];
+      let line = (i + 1) + ". " + item.code;
+      if(item.name) line += " (" + item.name + ")";
+      if(item.maker) line += " / " + item.maker;
+      line += " × " + (item.qty || 1);
+      lines.push(line);
+    }
+
+    if(remarks){
+      lines.push("");
+      lines.push("■備考");
+      lines.push(remarks);
+    }
+
+    lines.push("");
+    lines.push("作成日時: " + formatDate(nowIso()));
+
+    const text = lines.join("\n");
+    els.orderPreview.textContent = text;
+    updateLineLink(text);
+    return text;
+  }
+
+  function updateLineLink(text){
+    els.lineBtn.href = text ? "https://line.me/R/msg/text/?" + encodeURIComponent(text) : "#";
+  }
+
+  async function copyText(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      setStatus("コピーしました", "success");
+    }catch(e){
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+      setStatus("コピーしました", "success");
+    }
+  }
+
+  function saveCurrentToHistory(){
+    const current = getCurrent();
+    if(!current.length){
+      alert("保存するリストがありません");
+      return;
+    }
+
+    const text = buildOrderText();
+    const history = getHistory();
+
+    history.unshift({
+      id: String(Date.now()) + "_" + Math.random().toString(16).slice(2),
+      createdAt: nowIso(),
+      companyName: els.companyName.value.trim(),
+      personName: els.personName.value.trim(),
+      remarks: els.remarks.value.trim(),
+      items: current,
+      text: text
+    });
+
+    saveHistory(history);
+    renderHistory();
+    setStatus("履歴に保存しました", "success");
+  }
+
+  function removeHistory(id){
+    const list = getHistory().filter(v => v.id !== id);
+    saveHistory(list);
+    renderHistory();
+  }
+
+  function clearHistory(){
+    if(!confirm("履歴を全削除しますか？")) return;
+    saveHistory([]);
+    renderHistory();
+    setStatus("履歴を全削除しました", "success");
+  }
+
+  function restoreHistory(id){
+    const item = getHistory().find(v => v.id === id);
+    if(!item) return;
+
+    saveCurrent(item.items || []);
+    els.companyName.value = item.companyName || "";
+    els.personName.value = item.personName || "";
+    els.remarks.value = item.remarks || "";
+
+    renderCurrent();
+    buildOrderText();
+    setStatus("履歴を読み込みました", "success");
+  }
+
+  function renderHistory(){
+    const list = getHistory();
+    els.historyCount.textContent = list.length + "件";
+
+    if(!list.length){
+      els.historyList.innerHTML = '<div class="small">保存履歴はありません。</div>';
+      return;
+    }
+
+    let html = "";
+    for(let i = 0; i < list.length; i++){
+      const item = list[i];
+      const summary = (item.items || []).map(v => v.code + " × " + (v.qty || 1)).join(", ");
+
+      html += `
+        <div class="item">
+          <div class="item-code">${escapeHtml(item.companyName || "会社名未入力")} / ${escapeHtml(item.personName || "担当者未入力")}</div>
+          <div class="item-meta">${formatDate(item.createdAt)}</div>
+          <div class="item-meta">${escapeHtml(summary)}</div>
+          <div class="item-actions no-print">
+            <button class="btn-blue" onclick="window.restoreHistoryItem('${item.id}')">読み込む</button>
+            <button class="btn-green" onclick="window.copyHistoryItem('${item.id}')">コピー</button>
+            <button class="btn-red" onclick="window.removeHistoryItem('${item.id}')">削除</button>
+          </div>
+        </div>
+      `;
+    }
+
+    els.historyList.innerHTML = html;
+  }
+
+  function bindEvents(){
+    els.startBtn.addEventListener("click", startCamera);
+    els.scanBtn.addEventListener("click", scan);
+    els.stopBtn.addEventListener("click", stopCamera);
+    els.addManualBtn.addEventListener("click", addManualInput);
+    els.buildOrderBtn.addEventListener("click", buildOrderText);
+    els.saveHistoryBtn.addEventListener("click", saveCurrentToHistory);
+
+    els.manual.addEventListener("keydown", (e) => {
+      if(e.key === "Enter"){
+        e.preventDefault();
+        addManualInput();
+      }
+    });
+
+    els.manual.addEventListener("input", () => {
+      const normalized = normalizeCode(els.manual.value);
+      renderLinks(normalized);
+    });
+
+    els.copyBtn.addEventListener("click", () => {
+      const text = buildOrderText();
+      if(!text){
+        alert("コピーする注文文がありません");
+        return;
+      }
+      copyText(text);
+    });
+
+    els.printBtn.addEventListener("click", () => {
+      buildOrderText();
+      window.print();
+    });
+
+    els.clearCurrentBtn.addEventListener("click", clearCurrent);
+    els.clearHistoryBtn.addEventListener("click", clearHistory);
+
+    els.companyName.addEventListener("input", buildOrderText);
+    els.personName.addEventListener("input", buildOrderText);
+    els.remarks.addEventListener("input", buildOrderText);
+  }
+
+  window.useScanCandidate = useScanCandidate;
+  window.removeScanCandidate = removeScanCandidate;
+  window.changeQty = updateQty;
+  window.removeCurrentItem = removeCurrent;
+  window.restoreHistoryItem = restoreHistory;
+  window.removeHistoryItem = removeHistory;
+  window.copyHistoryItem = function(id){
+    const item = getHistory().find(v => v.id === id);
+    if(item && item.text) copyText(item.text);
+  };
+  window.pickSuggestion = function(code){
+    const normalized = normalizeCode(code);
+    if(!normalized) return;
+    els.manual.value = normalized;
+    renderLinks(normalized);
+    const addedId = addCurrentItem(normalized);
+    flashAddedRow(addedId);
+    setStatus("追加しました: " + normalized, "success");
+    els.manual.value = "";
+  };
+
+  function init(){
+    bindEvents();
+    cleanupHistory();
+    renderCurrent();
+    renderHistory();
+    renderSuggestions();
+    buildOrderText();
+
+    if(!isSecureContextLike()){
+      setStatus("準備完了 / カメラはHTTPSまたはlocalhostで利用してください");
+    }else{
+      setStatus("準備完了 / 辞書 " + PRODUCTS.length + "件");
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
