@@ -1,206 +1,101 @@
 <!DOCTYPE html>
-
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>電材スキャンPRO 最終版</title>
-
-<style>
-body{margin:0;background:#101418;color:#fff;font-family:sans-serif;text-align:center}
-.wrap{max-width:800px;margin:auto;padding:10px}
-.card{background:#1b2229;padding:10px;margin:10px;border-radius:10px}
-button{width:100%;padding:14px;margin:5px;border:none;border-radius:10px;background:#00c853;color:#fff}
-video{width:100%;max-height:50vh;background:#000;border-radius:10px}
-a{display:block;background:#2962ff;margin:5px;padding:10px;border-radius:8px;color:#fff;text-decoration:none}
-</style>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>電材スキャンPRO</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-<div class="wrap">
+  <div class="wrap">
+    <h1>電材スキャンPRO</h1>
 
-<h2>電材スキャンPRO 最終</h2>
+    <div class="card no-print">
+      <div class="title">読取・入力</div>
+      <div class="row">
+        <div class="col">
+          <input id="manual" placeholder="品番を入力またはスキャン">
+        </div>
+      </div>
 
-<div class="card">
-<input id="manual" placeholder="品番">
-</div>
+      <div class="row mt8">
+        <div class="col"><button class="btn-green" id="startBtn">カメラ起動</button></div>
+        <div class="col"><button class="btn-blue" id="scanBtn">スキャン</button></div>
+        <div class="col"><button class="btn-gray" id="stopBtn">停止</button></div>
+      </div>
 
-<div class="card">
-<button onclick="startCamera()">カメラ</button>
-<button onclick="scan()">スキャン</button>
-<button onclick="search()">検索</button>
-<button onclick="stopCamera()">停止</button>
-</div>
+      <div class="row mt8">
+        <div class="col"><button class="btn-orange" id="searchBtn">検索リンク表示</button></div>
+        <div class="col"><button class="btn-green" id="addBtn">リストに追加</button></div>
+      </div>
 
-<video id="video" autoplay playsinline muted></video>
+      <div class="small mt8">パナソニック配線器具、未来工業配管材向け。品番を中央に大きく写すと読み取りやすくなります。</div>
 
-<div id="status"></div>
-<div id="links"></div>
+      <video id="video" autoplay playsinline muted></video>
+      <div class="status" id="status"></div>
 
-</div>
+      <div id="ocrBox" class="mt10" style="display:none;">
+        <div class="small">OCR候補</div>
+        <div class="list" id="ocrCandidates"></div>
+      </div>
 
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+      <div id="matchBox" class="mt10" style="display:none;">
+        <div class="small">辞書候補</div>
+        <div class="list" id="matchCandidates"></div>
+      </div>
 
-<script>
+      <div id="linksBox" class="mt10" style="display:none;">
+        <div class="small">検索リンク</div>
+        <div class="links" id="links"></div>
+      </div>
 
-let stream=null;
-let worker=null;
+      <div class="suggest-wrap">
+        <div class="small">よく使う候補</div>
+        <div id="suggestions"></div>
+      </div>
+    </div>
 
-// ---------- 品番スコア ----------
-function scoreCode(c){
-let s=0;
-if(c.length>=5)s+=2;
-if(/[A-Z]/.test(c))s+=3;
-if(/\d/.test(c))s+=3;
-if(/[-/.]/.test(c))s+=2;
-if(/^[A-Z0-9\-/.]+$/.test(c))s+=2;
-if(/^[0-9]+$/.test(c))s-=2;
-return s;
-}
+    <div class="card">
+      <div class="title">現在の追加リスト</div>
+      <div><span class="badge" id="currentCount">0件</span></div>
+      <div class="list mt8" id="currentList"></div>
+      <div class="row no-print mt8">
+        <div class="col"><button class="btn-red" id="clearCurrentBtn">現在リスト全削除</button></div>
+      </div>
+    </div>
 
-// ---------- 品番抽出 ----------
-function extractCodes(text){
-const raw=(text.match(/[A-Z0-9][A-Z0-9\-/.]{3,20}/g)||[]);
-return [...new Set(raw)].sort((a,b)=>scoreCode(b)-scoreCode(a));
-}
+    <div class="card">
+      <div class="title">注文情報</div>
+      <div class="row">
+        <div class="col"><input id="companyName" placeholder="会社名"></div>
+        <div class="col"><input id="personName" placeholder="担当者"></div>
+      </div>
+      <div class="row mt8">
+        <div class="col"><textarea id="remarks" placeholder="備考"></textarea></div>
+      </div>
+      <div class="row no-print mt8">
+        <div class="col"><button class="btn-blue" id="buildOrderBtn">注文文を作成</button></div>
+        <div class="col"><button class="btn-green" id="saveHistoryBtn">履歴として保存</button></div>
+      </div>
+      <div class="order-preview mt8" id="orderPreview">ここに注文文が表示されます。</div>
+      <div class="row no-print mt8">
+        <div class="col"><button class="btn-green" id="copyBtn">注文文をコピー</button></div>
+        <div class="col"><a class="btn btn-line" id="lineBtn" href="#" target="_blank" rel="noopener">LINEで共有</a></div>
+        <div class="col"><button class="btn-gray" id="printBtn">印刷</button></div>
+      </div>
+    </div>
 
-// ---------- OCR worker ----------
-async function getWorker(){
-if(worker)return worker;
-worker=await Tesseract.createWorker("eng");
-await worker.setParameters({
-tessedit_char_whitelist:"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_/."
-});
-return worker;
-}
+    <div class="card">
+      <div class="title">保存履歴</div>
+      <div><span class="badge" id="historyCount">0件</span></div>
+      <div class="list mt8" id="historyList"></div>
+      <div class="row no-print mt8">
+        <div class="col"><button class="btn-red" id="clearHistoryBtn">履歴を全削除</button></div>
+      </div>
+    </div>
+  </div>
 
-// ---------- カメラ ----------
-async function startCamera(){
-stream=await navigator.mediaDevices.getUserMedia({
-video:{facingMode:{ideal:"environment"}}
-});
-video.srcObject=stream;
-await video.play();
-}
-
-// ---------- 停止 ----------
-function stopCamera(){
-if(stream){
-stream.getTracks().forEach(t=>t.stop());
-stream=null;
-}
-}
-
-// ---------- 領域切り取り ----------
-function cropCenter(canvas){
-
-const w=canvas.width;
-const h=canvas.height;
-
-const cw=w*0.7;
-const ch=h*0.3;
-
-const x=(w-cw)/2;
-const y=(h-ch)/2;
-
-const out=document.createElement("canvas");
-out.width=cw;
-out.height=ch;
-
-const ctx=out.getContext("2d");
-ctx.drawImage(canvas,x,y,cw,ch,0,0,cw,ch);
-
-return out;
-}
-
-// ---------- 前処理 ----------
-function preprocess(canvas){
-
-const ctx=canvas.getContext("2d");
-const img=ctx.getImageData(0,0,canvas.width,canvas.height);
-const d=img.data;
-
-for(let i=0;i<d.length;i+=4){
-let g=d[i]*0.3+d[i+1]*0.59+d[i+2]*0.11;
-g=(g-128)*1.8+128;
-g=Math.max(0,Math.min(255,g));
-d[i]=d[i+1]=d[i+2]=g;
-}
-
-ctx.putImageData(img,0,0);
-return canvas;
-}
-
-// ---------- スキャン ----------
-async function scan(){
-
-if(!video.videoWidth){
-alert("カメラ起動して");
-return;
-}
-
-status.innerText="読取中";
-
-try{
-
-// フルキャプチャ
-const canvas=document.createElement("canvas");
-canvas.width=video.videoWidth;
-canvas.height=video.videoHeight;
-canvas.getContext("2d").drawImage(video,0,0);
-
-// 中央切り取り（重要）
-const cropped=cropCenter(canvas);
-
-// 前処理（重要）
-const processed=preprocess(cropped);
-
-// OCR
-const w=await getWorker();
-const ret=await w.recognize(processed);
-const text=ret.data.text||"";
-
-// 品番抽出
-const codes=extractCodes(text);
-const best=codes[0]||"";
-
-manual.value=best;
-
-// デバッグ用
-console.log(text,codes);
-
-render(best);
-
-status.innerText="完了";
-
-}catch(e){
-console.error(e);
-status.innerText="失敗";
-}
-
-}
-
-// ---------- 検索 ----------
-function render(p){
-
-if(!p){
-links.innerHTML="無し";
-return;
-}
-
-links.innerHTML=`
-<a href="https://www.google.com/search?q=${p}+仕様書" target="_blank">説明書</a>
-<a href="https://www.google.com/search?q=${p}+図面" target="_blank">図面</a>
-<a href="https://www.google.com/search?q=${p}" target="_blank">検索</a>
-`;
-}
-
-function search(){
-render(manual.value);
-}
-
-</script>
-
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
