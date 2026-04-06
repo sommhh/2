@@ -1,0 +1,122 @@
+[
+  {
+    "code": "WTF1502WK",
+    "name": "コスモシリーズワイド21 埋込ダブルコンセント",
+    "maker": "Panasonic",
+    "category": "配線器具",
+    "aliases": ["WTF1502", "WTFI502WK", "WTF-1502WK"],
+    "keywords": ["コスモ", "ワイド21", "コンセント", "埋込", "ダブル"]
+  },
+  {
+    "code": "WT50519",
+    "name": "コスモシリーズワイド21 埋込ほたるスイッチB",
+    "maker": "Panasonic",
+    "category": "配線器具",
+    "aliases": ["WT5051", "WT5O519", "WT-50519"],
+    "keywords": ["コスモ", "スイッチ", "ほたる", "B"]
+  },
+  {
+    "code": "WTA5051",
+    "name": "アドバンスシリーズ スイッチ",
+    "maker": "Panasonic",
+    "category": "配線器具",
+    "aliases": ["WTA5O51", "WTA-5051"],
+    "keywords": ["アドバンス", "スイッチ"]
+  },
+  {
+    "code": "WTA3700K",
+    "name": "アドバンスシリーズ プレート",
+    "maker": "Panasonic",
+    "category": "配線器具",
+    "aliases": ["WTA37O0K", "WTA-3700K"],
+    "keywords": ["アドバンス", "プレート"]
+  },
+  {
+    "code": "WN5001",
+    "name": "埋込コンセント",
+    "maker": "Panasonic",
+    "category": "配線器具",
+    "aliases": ["WN5OO1", "WN-5001"],
+    "keywords": ["コンセント", "埋込"]
+  },
+  {
+    "code": "WN6001W",
+    "name": "モダンプレート",
+    "maker": "Panasonic",
+    "category": "配線器具",
+    "aliases": ["WN6OO1W", "WN-6001W"],
+    "keywords": ["プレート", "白"]
+  },
+  {
+    "code": "PF-16",
+    "name": "PF管 16",
+    "maker": "未来工業",
+    "category": "配管部材",
+    "aliases": ["PF16", "PF-I6", "PF 16"],
+    "keywords": ["PF管", "配管", "16"]
+  },
+  {
+    "code": "PF-22",
+    "name": "PF管 22",
+    "maker": "未来工業",
+    "category": "配管部材",
+    "aliases": ["PF22", "PF-2Z", "PF 22"],
+    "keywords": ["PF管", "配管", "22"]
+  },
+  {
+    "code": "VE-16",
+    "name": "VE管 16",
+    "maker": "未来工業",
+    "category": "配管部材",
+    "aliases": ["VE16", "VE-I6", "VE 16"],
+    "keywords": ["VE管", "配管", "16"]
+  },
+  {
+    "code": "VE-22",
+    "name": "VE管 22",
+    "maker": "未来工業",
+    "category": "配管部材",
+    "aliases": ["VE22", "VE-2Z", "VE 22"],
+    "keywords": ["VE管", "配管", "22"]
+  },
+  {
+    "code": "MFS-16",
+    "name": "モール付属品 16",
+    "maker": "未来工業",
+    "category": "モール部材",
+    "aliases": ["MFS16", "MFS-I6", "MFS 16"],
+    "keywords": ["モール", "付属品", "16"]
+  },
+  {
+    "code": "MFS-22",
+    "name": "モール付属品 22",
+    "maker": "未来工業",
+    "category": "モール部材",
+    "aliases": ["MFS22", "MFS-2Z", "MFS 22"],
+    "keywords": ["モール", "付属品", "22"]
+  },
+  {
+    "code": "PVP-28J",
+    "name": "プールボックス",
+    "maker": "未来工業",
+    "category": "配管部材",
+    "aliases": ["PVP28J", "PVP-28」", "PVP 28J"],
+    "keywords": ["プールボックス", "ボックス"]
+  },
+  {
+    "code": "WK3001W",
+    "name": "防雨スイッチ",
+    "maker": "Panasonic",
+    "category": "配線器具",
+    "aliases": ["WK3OO1W", "WK-3001W"],
+    "keywords": ["防雨", "スイッチ"]
+  },
+  {
+    "code": "WK4102K",
+    "name": "防雨コンセント",
+    "maker": "Panasonic",
+    "category": "配線器具",
+    "aliases": ["WK41O2K", "WK-4102K"],
+    "keywords": ["防雨", "コンセント"]
+  }
+]
