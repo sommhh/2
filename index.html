@@ -3,38 +3,88 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>位置図Pro 完全版</title>
+<title>位置図Pro 安定完成版</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 <style>
-body{margin:0;font-family:Meiryo,sans-serif}
-header{background:#0f172a;color:#fff;padding:8px;display:flex;gap:5px;flex-wrap:wrap}
-header h1{font-size:14px;margin:0 8px 0 0;flex:1}
-button{padding:8px;border-radius:6px;border:0;background:#e2e8f0}
+body{
+  margin:0;
+  font-family:Meiryo,sans-serif;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+
+header{
+  background:#0f172a;
+  color:#fff;
+  padding:8px;
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+}
+
+button{
+  padding:8px;
+  border-radius:6px;
+  border:0;
+  background:#e2e8f0;
+}
+
 .primary{background:#2563eb;color:#fff}
 
-#app{display:flex;height:calc(100vh - 42px)}
-aside{width:300px;background:#f8fafc;border-right:1px solid #ccc;padding:10px;overflow:auto}
-aside input,aside select,aside textarea{width:100%;padding:6px;margin-top:3px}
+#app{
+  display:flex;
+  height:100dvh;
+}
 
-#map{flex:1;position:relative}
+aside{
+  width:300px;
+  background:#f8fafc;
+  border-right:1px solid #ccc;
+  padding:10px;
+  overflow:auto;
+}
 
-.toolbar{position:absolute;top:8px;left:8px;background:#fff;padding:5px;border-radius:6px;z-index:1000}
-.toolbar button.active{background:#2563eb;color:#fff}
+aside input,aside select,aside textarea{
+  width:100%;
+  padding:6px;
+  margin-top:3px;
+}
 
-.compass{position:absolute;top:8px;right:8px;width:50px;height:50px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center}
+#map{
+  flex:1;
+}
 
-.status{position:absolute;bottom:0;left:0;right:0;background:#000;color:#fff;font-size:11px;padding:3px}
+.toolbar{
+  position:absolute;
+  top:8px;
+  left:8px;
+  background:#fff;
+  padding:5px;
+  z-index:1000;
+  border-radius:6px;
+}
+
+.compass{
+  position:absolute;
+  top:8px;
+  right:8px;
+  width:50px;
+  height:50px;
+  background:#fff;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 </style>
 </head>
 
 <body>
 
 <header>
-<h1>電力申請用 位置図Pro</h1>
 <button id="gps" class="primary">GPS</button>
 <button id="save">保存</button>
 <button id="load">読込</button>
@@ -48,42 +98,20 @@ aside input,aside select,aside textarea{width:100%;padding:6px;margin-top:3px}
 
 <div id="app">
 
-<!-- ★元フォーム完全復元 -->
 <aside>
-<label>現場名<input id="genba"></label>
-<label>住所<input id="jusho"></label>
-<label>工事種別<select id="koji"><option>本設</option><option>仮設</option></select></label>
-<label>二類/三類<select id="ruis"><option>二類</option><option>三類</option></select></label>
-<label>供給区分<select id="kyokyu">
-<option>単相2線式 100V</option>
-<option selected>単相3線式 100/200V</option>
-<option>三相3線式 200V</option>
-</select></label>
-<label>DV線種<select id="dv"><option>DV2線</option><option>DV3線</option></select></label>
-<label>太さ<select id="futo">
-<option>3.2mm</option><option>22mm²</option><option>38mm²</option>
-<option>60mm²</option><option>100mm²</option>
-</select></label>
-<label>受点完成日<input id="juten" type="date"></label>
-<label>検査希望日<input id="kensa" type="date"></label>
-<label>メーター
-<input type="radio" name="mbox" value="ベージュ" checked>ベージュ
-<input type="radio" name="mbox" value="グレー">グレー
-</label>
-<label>備考<textarea id="biko"></textarea></label>
+<input id="genba" placeholder="現場名">
+<input id="jusho" placeholder="住所">
 </aside>
 
 <div id="map">
 <div class="toolbar">
-<button data-m="pole" class="active">電柱</button>
+<button data-m="pole">電柱</button>
 <button data-m="trans">Tr</button>
 <button data-m="house">🏠</button>
 <button data-m="lv">低圧</button>
 <button data-m="dist">距離</button>
 </div>
-
 <div class="compass" id="comp">↑</div>
-<div class="status" id="st">電柱</div>
 </div>
 
 </div>
@@ -91,6 +119,7 @@ aside input,aside select,aside textarea{width:100%;padding:6px;margin-top:3px}
 <script>
 const $=id=>document.getElementById(id);
 
+// マップ
 const map=L.map('map',{doubleClickZoom:false}).setView([38.17,140.86],17);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
@@ -100,12 +129,7 @@ let mode='pole',hist=[],cur=null,d1=null;
 
 // モード
 document.querySelectorAll('[data-m]').forEach(b=>{
- b.onclick=()=>{
-  mode=b.dataset.m;
-  document.querySelectorAll('[data-m]').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active');
-  $('st').textContent=b.textContent;
- };
+ b.onclick=()=>mode=b.dataset.m;
 });
 
 // アイコン
@@ -115,7 +139,7 @@ const icon=(txt,color)=>L.divIcon({
  <div style="font-size:10px">${txt}</div></div>`
 });
 
-// クリック
+// 描画
 map.on('click',e=>{
  if(mode==='pole'||mode==='trans'){
   const n=prompt('番号'); if(!n)return;
@@ -128,8 +152,10 @@ map.on('click',e=>{
   m.k='h'; hist.push(m);
  }
  else if(mode==='lv'){
-  if(!cur){cur=L.polyline([e.latlng],{color:'#000'}).addTo(drawn);cur.k='lv';hist.push(cur);}
-  else cur.addLatLng(e.latlng);
+  if(!cur){
+   cur=L.polyline([e.latlng],{color:'#000'}).addTo(drawn);
+   cur.k='lv'; hist.push(cur);
+  } else cur.addLatLng(e.latlng);
  }
  else if(mode==='dist'){
   if(!d1)d1=e.latlng;
@@ -151,35 +177,24 @@ $('gps').onclick=()=>{
  },e=>alert("GPS失敗:"+e.message));
 };
 
-// 保存（フォーム込み）
+// 保存
 $('save').onclick=()=>{
- const f={
+ const data={
   genba:$('genba').value,
   jusho:$('jusho').value,
-  koji:$('koji').value,
-  ruis:$('ruis').value,
-  kyokyu:$('kyokyu').value,
-  dv:$('dv').value,
-  futo:$('futo').value,
-  juten:$('juten').value,
-  kensa:$('kensa').value,
-  mbox:document.querySelector('[name=mbox]:checked').value,
-  biko:$('biko').value
+  layers:hist.map(l=>{
+   if(l.k==='p')return{t:'p',lat:l.getLatLng().lat,lon:l.getLatLng().lng,n:l.n,tr:l.t};
+   if(l.k==='h')return{t:'h',lat:l.getLatLng().lat,lon:l.getLatLng().lng};
+   if(l.k==='lv')return{t:'lv',pts:l.getLatLngs().map(p=>[p.lat,p.lng])};
+  }).filter(Boolean)
  };
-
- const layers=hist.map(l=>{
-  if(l.k==='p')return{t:'p',lat:l.getLatLng().lat,lon:l.getLatLng().lng,n:l.n,tr:l.t};
-  if(l.k==='h')return{t:'h',lat:l.getLatLng().lat,lon:l.getLatLng().lng};
-  if(l.k==='lv')return{t:'lv',pts:l.getLatLngs().map(p=>[p.lat,p.lng])};
- }).filter(Boolean);
-
- localStorage.setItem("MAP_"+f.genba,JSON.stringify({f,layers}));
+ localStorage.setItem("MAP_"+data.genba,JSON.stringify(data));
  alert("保存OK");
 };
 
 // 読込
 $('load').onclick=()=>{
- const k=prompt("現場名"); if(!k)return;
+ const k=prompt("現場名");
  const d=JSON.parse(localStorage.getItem("MAP_"+k)||'null');
  if(!d)return alert("なし");
 
@@ -188,20 +203,16 @@ $('load').onclick=()=>{
  d.layers.forEach(o=>{
   if(o.t==='p'){
    const m=L.marker([o.lat,o.lon],{icon:icon(o.n,o.tr?'red':'black')}).addTo(drawn);
-   m.k='p'; m.n=o.n; m.t=o.tr; hist.push(m);
+   m.k='p'; hist.push(m);
   }
   if(o.t==='h'){
    const m=L.marker([o.lat,o.lon],{icon:icon('家','green')}).addTo(drawn);
    m.k='h'; hist.push(m);
   }
   if(o.t==='lv'){
-   const l=L.polyline(o.pts,{color:'#000'}).addTo(drawn);
+   const l=L.polyline(o.pts).addTo(drawn);
    l.k='lv'; hist.push(l);
   }
- });
-
- Object.entries(d.f).forEach(([k,v])=>{
-  if($(k))$(k).value=v;
  });
 };
 
@@ -244,6 +255,16 @@ ${$('jusho').value}
 https://maps.google.com/?q=${c.lat},${c.lng}`;
  location.href='https://line.me/R/msg/text/?'+encodeURIComponent(txt);
 };
+
+// ★最重要：高さ補正
+function fixHeight(){
+ document.getElementById('app').style.height=window.innerHeight+"px";
+ setTimeout(()=>map.invalidateSize(),300);
+}
+
+window.addEventListener('load',fixHeight);
+window.addEventListener('resize',fixHeight);
+window.addEventListener('orientationchange',fixHeight);
 
 // コンパス
 window.addEventListener("deviceorientation",e=>{
