@@ -196,8 +196,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
-body{position:fixed;width:100%;background:#fff}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,sans-serif;touch-action:manipulation}
+body{width:100%;background:#fff;touch-action:manipulation}
 button,input,select,textarea{font-family:inherit;font-size:16px}
 button{cursor:pointer;touch-action:manipulation}
 
@@ -263,7 +263,7 @@ button{cursor:pointer;touch-action:manipulation}
 .ripple{position:absolute;width:44px;height:44px;border-radius:50%;background:rgba(37,99,235,0.3);transform:translate(-50%,-50%) scale(0);animation:rip .45s ease-out;pointer-events:none;z-index:20}
 @keyframes rip{to{transform:translate(-50%,-50%) scale(2.2);opacity:0}}
 
-@media print{.sidebar,.tools,.fab,.hint,.map-ready{display:none!important}#map{height:100vh!important}}
+@media print{html,body{height:auto}.sidebar,.tools,.fab,.hint,.map-ready{display:none!important}#map{height:100%!important}}
 </style>
 </head>
 <body>
@@ -328,7 +328,7 @@ button{cursor:pointer;touch-action:manipulation}
   var map = document.getElementById('map');
   var ready = document.getElementById('ready');
   var hint = document.getElementById('hint');
-  var state = {active:false,tool:null,objs:[],undo:[],tmp:[],last:0};
+  var state = {active:false,tool:null,objs:[],undo:[],tmp:[],last:0,lastTap:0};
   
   function $(id){return document.getElementById(id)}
   function getR(n){var e=document.querySelector('input[name="'+n+'"]:checked');return e?e.value:''}
@@ -336,6 +336,17 @@ button{cursor:pointer;touch-action:manipulation}
   function show(t){hint.textContent=t;hint.classList.add('show');setTimeout(function(){hint.classList.remove('show')},1500)}
   function vib(p){if(navigator.vibrate)try{navigator.vibrate(p||10)}catch(e){}}
   function setAttr(el,k,v){el.setAttribute(k,v)}
+  
+  var leafletMap = L.map('map').setView([38.17,140.88],16);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© OpenStreetMap'
+  }).addTo(leafletMap);
+  
+  leafletMap.on('click', function(e){
+    const lat = e.latlng.lat;
+    const lng = e.latlng.lng;
+    console.log(lat, lng);
+  });
   
   function activate(){
     if(state.active)return;
@@ -351,16 +362,17 @@ button{cursor:pointer;touch-action:manipulation}
     else{x=e.clientX;y=e.clientY}
     var px=Math.max(0,Math.min(100,((x-r.left)/r.width)*100));
     var py=Math.max(0,Math.min(100,((y-r.top)/r.height)*100));
-    px=Math.round(px*2)/2;py=Math.round(py*2)/2;
+    px=Math.round(px*10)/10;py=Math.round(py*10)/10;
     return{x:px,y:py,cx:x,cy:y}
   }
   
+  function calcDist(p1,p2){const dx=(p2.x-p1.x)*map.clientWidth;const dy=(p2.y-p1.y)*map.clientHeight;return Math.sqrt(dx*dx+dy*dy)/50}
   function ripple(x,y){
     var r=document.createElement('div');r.className='ripple';r.style.left=x+'px';r.style.top=y+'px';map.appendChild(r);setTimeout(function(){r.remove()},450);
   }
   
   function add(t,d){
-    var o={t:t,id:'o'+Date.now()+Math.random().toString(36).slice(2,5),d:d};state.objs.push(o);state.undo.push(o);render(o);save();vib(10);return o;
+    var o={t:t,id:'o'+Date.now()+Math.random().toString(36).slice(2,5),d:d};state.objs.push(o);state.undo.push(o);if(state.undo.length>100){state.undo.shift()}render(o);save();vib(10);return o;
   }
   
   function render(o){
@@ -382,57 +394,64 @@ button{cursor:pointer;touch-action:manipulation}
   
   function clearAll(){map.querySelectorAll('.obj').forEach(function(e){e.remove()})}
   
-  // 修正：pointerdownに変更、確実に発火
-  map.addEventListener('pointerdown',function(e){
+  function onTap(e){
+    if(e.type === 'pointerdown'){
+      if(e.pointerType === 'mouse' && e.button !== 0) return;
+    }
     if(!state.tool)return;
     if(e.cancelable)e.preventDefault();
-    var now=Date.now();if(now-state.last<200)return;state.last=now;
+    var now=Date.now();if(now-state.last<120)return;state.last=now;
     if(!state.active)activate();
     var p=pos(e);ripple(p.cx,p.cy);
     try{
-      if(state.tool==='pole'){var n=prompt('電柱番号');if(n&&n.trim()){add('pole',{x:p.x,y:p.y,n:n.trim()});show('電柱配置')}}
-      else if(state.tool==='trans'){var n=prompt('トランス番号');if(n&&n.trim()){add('trans',{x:p.x,y:p.y,n:n.trim()});show('トランス配置')}}
-      else if(state.tool==='line'){state.tmp.push(p);if(state.tmp.length===2){add('line',{p1:state.tmp[0],p2:state.tmp[1]});state.tmp=[];show('低圧線配置')}else{show('終点をタップ')}}
-      else if(state.tool==='hikikomi'){state.tmp.push(p);if(state.tmp.length===2){var d=parseFloat(prompt('長さ(m)','10'))||10;add('hikikomi',{p1:state.tmp[0],p2:state.tmp[1],dist:d});state.tmp=[];show('引込線配置')}else{show('終点をタップ')}}
-      else if(state.tool==='bunki'){state.tmp.push(p);if(state.tmp.length===2){add('bunki',{p1:state.tmp[0],p2:state.tmp[1]});state.tmp=[];show('分岐配置')}else{show('終点をタップ')}}
+      if(state.tool==='pole'){var n=prompt('電柱番号 (未入力OK)');if(n===null)return;n=n.trim()||'';if(n)add('pole',{x:p.x,y:p.y,n:n});else add('pole',{x:p.x,y:p.y,n:''});show('電柱配置')}
+      else if(state.tool==='trans'){var n=prompt('トランス番号 (未入力OK)');if(n===null)return;n=n.trim()||'';if(n)add('trans',{x:p.x,y:p.y,n:n});else add('trans',{x:p.x,y:p.y,n:''});show('トランス配置')}
+      else if(state.tool==='line'){state.tmp.push(p);if(state.tmp.length>=2){add('line',{p1:state.tmp[state.tmp.length-2],p2:state.tmp[state.tmp.length-1]});show('低圧線配置')}}
+      else if(state.tool==='hikikomi'){state.tmp.push(p);if(state.tmp.length>=2){var d=calcDist(state.tmp[state.tmp.length-2],state.tmp[state.tmp.length-1]).toFixed(1);add('hikikomi',{p1:state.tmp[state.tmp.length-2],p2:state.tmp[state.tmp.length-1],dist:d});show('引込線配置')}}
+      else if(state.tool==='bunki'){state.tmp.push(p);if(state.tmp.length>=2){add('bunki',{p1:state.tmp[state.tmp.length-2],p2:state.tmp[state.tmp.length-1]});show('分岐配置')}}
       else if(state.tool==='bld'){state.tmp.push(p);if(state.tmp.length===2){var a=state.tmp[0],b=state.tmp[1];add('bld',{ps:[{x:a.x,y:a.y},{x:b.x,y:a.y},{x:b.x,y:b.y},{x:a.x,y:b.y}]});state.tmp=[];show('建物配置')}else{show('対角をタップ')}}
-      else if(state.tool==='bldf'){state.tmp.push(p);show(state.tmp.length+'点');if(state.tmp.length>=4&&confirm(state.tmp.length+'点で確定しますか？')){add('bldf',{ps:state.tmp.slice()});state.tmp=[];show('自由形配置')}}
-      else if(state.tool==='text'){var t=prompt('文字');if(t&&t.trim()){add('text',{x:p.x,y:p.y,text:t.trim()});show('文字配置')}}
+      else if(state.tool==='bldf'){state.tmp.push(p);show(state.tmp.length+'点');var nowTap=Date.now();if(state.tmp.length>=3 && state.lastTap && (nowTap-state.lastTap)<400){add('bldf',{ps:state.tmp.slice()});state.tmp=[];show('自由形配置')}state.lastTap=nowTap}
+      else if(state.tool==='text'){var t=prompt('文字');if(t===null)return;t=t.trim();if(t){add('text',{x:p.x,y:p.y,text:t});show('文字配置')}}
     }catch(err){console.error(err)}
-  },{passive:false});
+  }
+  map.addEventListener('pointerdown', onTap, { passive:false });
+  map.addEventListener('pointerdown', function(){if(!state.active) activate()}, {passive:true});
+  map.addEventListener('touchmove', function(e){if(state.tool) e.preventDefault()}, { passive:false });
+  map.addEventListener('click', function(e){e.preventDefault()}, { passive:false });
+  map.addEventListener('contextmenu', function(e){e.preventDefault()}, { passive:false });
   
   document.querySelectorAll('#tools button').forEach(function(b){
     b.addEventListener('click',function(){state.tool=b.dataset.t;state.tmp=[];document.querySelectorAll('#tools button').forEach(function(x){x.classList.remove('on')});b.classList.add('on');if(!state.active)activate();var n={pole:'電柱',trans:'トランス',line:'低圧線',hikikomi:'引込線',bunki:'分岐',bld:'建物',bldf:'自由形',text:'文字'};show(n[state.tool]+'モード');vib(5)},false);
   });
   
   function save(){
-    try{var d={v:'31',f:{genba:$('genba').value,jusho:$('jusho').value,koji:getR('k'),kyokyu:getR('s'),keiyaku:getR('c'),amp:$('amp').value,dv:$('dv').value,sz:$('sz').value,mbox:getR('m'),hk:[$('h1').checked?'二類':'',$('h2').checked?'三類':'',$('h3').checked?'空中分岐':''].filter(Boolean),eq:[$('e1').checked?'太陽光':'',$('e2').checked?'エコキュート':'',$('e3').checked?'IH':''].filter(Boolean),juten:$('juten').value,kensa:$('kensa').value,biko:$('biko').value},o:state.objs,m:state.active};localStorage.setItem('dq31',JSON.stringify(d));return true}catch(e){return false}
+    try{var d={v:'31',f:{genba:$('genba').value,jusho:$('jusho').value,koji:getR('k'),kyokyu:getR('s'),keiyaku:getR('c'),amp:$('amp').value,dv:$('dv').value,sz:$('sz').value,mbox:getR('m'),hk:[$('h1').checked?'二類':'',$('h2').checked?'三類':'',$('h3').checked?'空中分岐':''].filter(Boolean),eq:[$('e1').checked?'太陽光':'',$('e2').checked?'エコキュート':'',$('e3').checked?'IH':''].filter(Boolean),juten:$('juten').value,kensa:$('kensa').value,biko:$('biko').value},o:state.objs,m:state.active};var str=JSON.stringify(d);if(str.length > 900000){alert('データが多すぎます（軽量化してください）');return false}localStorage.setItem('dq31',str);return true}catch(e){alert('保存エラー');return false}
   }
   
   function load(){
     try{var s=localStorage.getItem('dq31');if(!s)return false;var d=JSON.parse(s),f=d.f||{};$('genba').value=f.genba||'';$('jusho').value=f.jusho||'';setR('k',f.koji||'本設');setR('s',f.kyokyu||'単相3線式 100V/200V');setR('c',f.keiyaku||'');$('amp').value=f.amp||'';$('dv').value=f.dv||'DV3線';$('sz').value=f.sz||'3.2mm';setR('m',f.mbox||'ベージュ');$('h1').checked=(f.hk||[]).includes('二類');$('h2').checked=(f.hk||[]).includes('三類');$('h3').checked=(f.hk||[]).includes('空中分岐');$('e1').checked=(f.eq||[]).includes('太陽光');$('e2').checked=(f.eq||[]).includes('エコキュート');$('e3').checked=(f.eq||[]).includes('IH');$('juten').value=f.juten||'';$('kensa').value=f.kensa||'';$('biko').value=f.biko||'';state.objs=d.o||[];state.undo=state.objs.slice();if(d.m||state.objs.length>0){activate();setTimeout(function(){clearAll();state.objs.forEach(render)},50)}return true}catch(e){return false}
   }
   
-  $('gps').addEventListener('click',function(){var b=this,t=b.innerHTML;b.innerHTML='⏳ 取得中';b.disabled=true;activate();if(navigator.geolocation){navigator.geolocation.getCurrentPosition(function(p){var lat=p.coords.latitude,lng=p.coords.longitude;fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lng+'&accept-language=ja',{headers:{'User-Agent':'denryoku-app'}}).then(function(r){if(!r.ok)throw new Error('net');return r.json()}).then(function(d){if(d&&d.display_name){var a=d.display_name.replace(/^日本、?/,'').split(',').slice(0,4).join(',');$('jusho').value=a}}).catch(function(){});b.innerHTML=t;b.disabled=false;show('GPS取得完了');vib([10,20,10])},function(err){b.innerHTML=t;b.disabled=false;var m='GPS取得失敗\n';if(err.code===1)m+='位置情報を許可してください';else if(err.code===2)m+='取得できません';else m+='タイムアウト';alert(m)},{enableHighAccuracy:false,timeout:8000,maximumAge:300000})}else{b.innerHTML=t;b.disabled=false;alert('GPS非対応\n地図を表示しました')}},false);
+  $('gps').addEventListener('click',function(){var b=this,t=b.innerHTML;b.innerHTML='⏳ 取得中';b.disabled=true;activate();if(navigator.geolocation){navigator.geolocation.getCurrentPosition(function(p){var lat=p.coords.latitude,lng=p.coords.longitude;var url='https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat='+lat+'&lon='+lng+'&accept-language=ja';fetch(url).then(function(r){return r.json()}).then(function(d){if(d&&d.address){var a=[d.address.state,d.address.city||d.address.town||d.address.village,d.address.suburb,d.address.road,d.address.house_number].filter(Boolean).join('').replace(/日本|〒\d{3}-\d{4}/g,'');$('jusho').value=a;map.style.background='#dbeafe';setTimeout(function(){map.style.background='#e2e8f0'},300)}else{$('jusho').value=lat.toFixed(6)+','+lng.toFixed(6)}}).catch(function(){$('jusho').value='位置: '+lat.toFixed(6)+','+lng.toFixed(6)});b.innerHTML=t;b.disabled=false;show('GPS取得完了');vib([10,20,10])},function(err){b.innerHTML=t;b.disabled=false;var m='GPS取得失敗\n';if(err.code===1)m+='位置情報を許可してください';else if(err.code===2)m+='取得できません';else m+='タイムアウト';alert(m)},{enableHighAccuracy:true,timeout:10000,maximumAge:300000})}else{b.innerHTML=t;b.disabled=false;alert('GPS非対応\n地図を表示しました')}},false);
   
   $('save').addEventListener('click',function(){if(save()){var b=this,t=b.innerHTML;b.innerHTML='✓ 保存';setTimeout(function(){b.innerHTML=t},1000);vib(20);show('保存しました')}else{alert('保存失敗')}},false);
   $('load').addEventListener('click',function(){if(load()){var b=this,t=b.innerHTML;b.innerHTML='✓ 読込';setTimeout(function(){b.innerHTML=t},1000);vib(20);show('読込完了')}else{alert('データなし')}},false);
-  $('undo').addEventListener('click',function(){if(state.undo.length===0){show('戻せません');return}var l=state.undo.pop();state.objs=state.objs.filter(function(o){return o.id!==l.id});document.querySelectorAll('[data-parent-id="'+l.id+'"]').forEach(function(e){e.remove()});document.querySelectorAll('[data-obj-id="'+l.id+'"]').forEach(function(e){e.remove()});save();show('1つ戻しました');vib(10)},false);
+  $('undo').addEventListener('click',function(){if(state.undo.length===0){show('戻せません');return}const last=state.undo.pop();state.objs=state.objs.filter(o=>o.id!==last.id);document.querySelectorAll('[data-obj-id],[data-parent-id]').forEach(e=>{if(e.getAttribute('data-obj-id')===last.id||e.getAttribute('data-parent-id')===last.id){e.remove()}});state.tmp=[];save();show('1つ戻しました');vib(10)},false);
   $('clear').addEventListener('click',function(){if(confirm('全て削除しますか？')){state.objs=[];state.undo=[];state.tmp=[];clearAll();save();show('全削除');vib([10,20,10])}},false);
   $('share').addEventListener('click',function(){var g=$('genba').value||'現場',j=$('jusho').value||'',k=getR('s')||'',a=$('amp').value||'';var t='【電力申請】
 現場:'+g+(j?'
 住所:'+j:'')+(k?'
 供給:'+k:'')+(a?'
-容量:'+a:'');if(navigator.share){navigator.share({title:'電力申請',text:t}).catch(function(){})}else{window.open('https://line.me/R/msg/text/?'+encodeURIComponent(t),'_blank')}vib(10)},false);
+容量:'+a:'');if(navigator.share){navigator.share({title:'電力申請',text:t}).catch(function(){})}else{location.href='https://line.me/R/msg/text/?'+encodeURIComponent(t)}vib(10)},false);
   
   var sb=$('sb'),tg=$('tg'),fab=$('fab');
   tg.addEventListener('click',function(){var h=!sb.classList.contains('hide');sb.classList.toggle('hide',h);tg.textContent=h?'▲':'▼';localStorage.setItem('sb',h?'1':'0')},false);
   fab.addEventListener('click',function(){sb.classList.remove('hide');tg.textContent='▼';localStorage.setItem('sb','0')},false);
   if(localStorage.getItem('sb')==='1'&&window.innerWidth<769){sb.classList.add('hide');tg.textContent='▲'}
   
-  var st;document.querySelectorAll('input,select,textarea').forEach(function(e){e.addEventListener('change',function(){clearTimeout(st);st=setTimeout(save,600)},false);e.addEventListener('input',function(){clearTimeout(st);st=setTimeout(save,600)},false)});
+  var saveTimer;function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(save,800)}document.querySelectorAll('input,select,textarea').forEach(function(e){e.addEventListener('change',scheduleSave,false);e.addEventListener('input',scheduleSave,false)});
   
-  window.addEventListener('load',function(){setTimeout(function(){if(localStorage.getItem('dq31')){if(confirm('前回のデータを復元しますか？'))load()}},400);activate()},false);
+  window.addEventListener('load',function(){setTimeout(function(){if(localStorage.getItem('dq31')){if(confirm('前回のデータを復元しますか？'))load()}},400)},false);window.addEventListener('beforeunload',save);setInterval(save,5000);
 }();
 </script>
 </body>
