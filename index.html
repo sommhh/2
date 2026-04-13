@@ -1,342 +1,204 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<!-- Playables SDK -->
-<script>// Playables SDK v1.0.0
-// Game lifecycle bridge: rAF-based game-ready detection + event communication
-(function() {
-  'use strict';
-
-  // Idempotency: skip if already initialized (e.g., server-side injection
-  // followed by client-side inject-javascript via the Bloks webview component).
-  if (window.playablesSDK) return;
-
-  var HANDLER_NAME = 'playablesGameEventHandler';
-  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
-  var RAF_FRAME_THRESHOLD = 3;
-
-  var gameReadySent = false;
-  var firstInteractionSent = false;
-  var errorSent = false;
-  var frameCount = 0;
-  var originalRAF = window.requestAnimationFrame;
-
-  // --- Transport Layer ---
-
-  function hasIOSBridge() {
-    return !!(window.webkit &&
-              window.webkit.messageHandlers &&
-              window.webkit.messageHandlers[HANDLER_NAME]);
-  }
-
-  function hasAndroidBridge() {
-    return !!(window[ANDROID_BRIDGE_NAME] &&
-              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
-  }
-
-  function isInIframe() {
-    return !!(window.parent && window.parent !== window);
-  }
-
-  function sendEvent(eventName, payload) {
-    var message = {
-      type: eventName,
-      payload: payload || {},
-      timestamp: Date.now()
-    };
-
-    if (hasIOSBridge()) {
-      try {
-        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
-      } catch (e) { /* ignore */ }
-      return;
-    }
-
-    if (hasAndroidBridge()) {
-    try {
-      var p = payload || {};
-      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
-      window[ANDROID_BRIDGE_NAME].postEvent(
-        eventName,
-        JSON.stringify(p)
-      );
-    } catch (e) { /* ignore */ }
-    return;
-  }
-
-    if (isInIframe()) {
-      try {
-        window.parent.postMessage(message, '*');
-      } catch (e) { /* ignore */ }
-      return;
-    }
-  }
-
-  // --- rAF Game-Ready Detection ---
-
-  function onFrame() {
-    if (gameReadySent) return;
-
-    frameCount++;
-    if (frameCount >= RAF_FRAME_THRESHOLD) {
-      gameReadySent = true;
-      sendEvent('game_ready', {
-        frame_count: frameCount,
-        detected_at: Date.now()
-      });
-      return;
-    }
-
-    originalRAF.call(window, onFrame);
-  }
-
-  if (originalRAF) {
-    window.requestAnimationFrame = function(callback) {
-      if (!gameReadySent) {
-        return originalRAF.call(window, function(timestamp) {
-          frameCount++;
-          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
-            gameReadySent = true;
-            sendEvent('game_ready', {
-              frame_count: frameCount,
-              detected_at: Date.now()
-            });
-          }
-          callback(timestamp);
-        });
-      }
-      return originalRAF.call(window, callback);
-    };
-  }
-
-  // --- First User Interaction Detection ---
-
-  function setupFirstInteractionDetection() {
-    var events = ['touchstart', 'mousedown', 'keydown'];
-
-    function onFirstInteraction() {
-      if (firstInteractionSent) return;
-      firstInteractionSent = true;
-      sendEvent('user_interaction_start', null);
-
-      for (var i = 0; i < events.length; i++) {
-        document.removeEventListener(events[i], onFirstInteraction, true);
-      }
-    }
-
-    for (var i = 0; i < events.length; i++) {
-      document.addEventListener(events[i], onFirstInteraction, true);
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
-  } else {
-    setupFirstInteractionDetection();
-  }
-
-  // --- Auto Error Capture ---
-
-  window.addEventListener('error', function(event) {
-    if (errorSent) return;
-    errorSent = true;
-    sendEvent('error', {
-      message: event.message || 'Unknown error',
-      source: event.filename || '',
-      lineno: event.lineno || 0,
-      colno: event.colno || 0,
-      auto_captured: true
-    });
-  });
-
-  window.addEventListener('unhandledrejection', function(event) {
-    if (errorSent) return;
-    errorSent = true;
-    var reason = event.reason;
-    sendEvent('error', {
-      message: (reason instanceof Error) ? reason.message : String(reason),
-      type: 'unhandled_promise_rejection',
-      auto_captured: true
-    });
-  });
-
-  // --- Public API ---
-
-  window.playablesSDK = {
-    complete: function(score) {
-      sendEvent('game_ended', {
-        score: score,
-        completed: true
-      });
-    },
-
-    error: function(message) {
-      if (errorSent) return;
-      errorSent = true;
-      sendEvent('error', {
-        message: message || 'Unknown error',
-        auto_captured: false
-      });
-    },
-
-    sendEvent: function(eventName, payload) {
-      if (!eventName || typeof eventName !== 'string') return;
-      sendEvent(eventName, payload);
-    }
-  };
-
-  // Kick off rAF detection in case no game code calls rAF immediately
-  if (originalRAF) {
-    originalRAF.call(window, onFrame);
-  }
-})();</script>
-<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>電力申請用 位置図Pro</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>位置図Pro 最強版</title>
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
 <style>
-body{margin:0;font-family:Meiryo,sans-serif}
-header{background:#0f172a;color:#fff;padding:8px;display:flex;gap:5px;flex-wrap:wrap}
-header h1{font-size:14px;margin:0 8px 0 0;flex:1;white-space:nowrap}
-button{padding:8px 10px;border:0;border-radius:6px;font-size:13px;background:#e2e8f0}
-button.primary{background:#2563eb;color:#fff}
-#app{display:flex;height:calc(100vh - 42px)}
-aside{width:300px;background:#f8fafc;border-right:1px solid #ccc;padding:10px;overflow:auto;font-size:13px}
-aside label{display:block;margin-top:8px;font-weight:bold}
-aside input,aside select,aside textarea{width:100%;padding:6px;border:1px solid #999;border-radius:4px;font-size:13px;margin-top:2px}
-#map{flex:1;position:relative}
-.toolbar{position:absolute;top:8px;left:8px;z-index:1000;background:#fff;padding:4px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.3);display:flex;gap:3px}
-.toolbar button{padding:6px 8px;font-size:12px}
-.toolbar button.active{background:#2563eb;color:#fff}
-.compass{position:absolute;top:8px;right:8px;z-index:1000;background:#fff;width:50px;height:50px;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.3);display:grid;place-items:center;font-size:18px;font-weight:bold}
-.status{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.7);color:#fff;font-size:11px;padding:3px 6px;z-index:1000}
-.pole{width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid #000}
-.pole.trans{border-color:#e60012}
-.pole-label{background:#fff;border:1px solid #000;padding:0 3px;font-size:10px;margin-top:1px;white-space:nowrap}
-@media(max-width:800px){#app{flex-direction:column}aside{width:100%;height:40vh}}
+body{margin:0;font-family:sans-serif}
+header{background:#111;color:#fff;padding:6px;display:flex;gap:5px;flex-wrap:wrap}
+button{padding:6px;border-radius:6px;border:0}
+.primary{background:#2563eb;color:#fff}
+#app{display:flex;height:calc(100vh - 40px)}
+aside{width:260px;background:#f1f5f9;padding:8px;overflow:auto}
+#map{flex:1}
+.toolbar{position:absolute;top:5px;left:5px;background:#fff;padding:5px;z-index:1000}
+.compass{position:absolute;top:5px;right:5px;background:#fff;width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center}
 </style>
 </head>
+
 <body>
+
 <header>
-<h1>電力申請用 位置図Pro</h1>
 <button id="gps" class="primary">GPS</button>
 <button id="save">保存</button>
+<button id="list">一覧</button>
 <button id="load">読込</button>
 <button id="undo">戻る</button>
 <button id="clear">全消</button>
+<button id="shot">📸</button>
+<button id="print">印刷</button>
 <button id="line">LINE</button>
 </header>
+
 <div id="app">
 <aside>
-<label>現場名<input id="genba"></label>
-<label>住所<input id="jusho"></label>
-<label>工事種別<select id="koji"><option>本設</option><option>仮設</option></select></label>
-<label>二類/三類<select id="ruis"><option>二類</option><option>三類</option></select></label>
-<label>供給区分<select id="kyokyu"><option>単相2線式 100V</option><option selected>単相3線式 100/200V</option><option>三相3線式 200V</option></select></label>
-<label>DV線種<select id="dv"><option>DV2線</option><option>DV3線</option></select></label>
-<label>太さ<select id="futo"><option>3.2mm</option><option>22mm²</option><option>38mm²</option><option>60mm²</option><option>100mm²</option></select></label>
-<label>受点完成日<input id="juten" type="date"></label>
-<label>検査希望日<input id="kensa" type="date"></label>
-<label>メーター<input type="radio" name="mbox" value="ベージュ" checked>ベージュ <input type="radio" name="mbox" value="グレー">グレー</label>
-<label>備考<textarea id="biko" rows="2"></textarea></label>
-<label>住所検索<input id="addr"><button id="search" style="width:100%;margin-top:3px">検索</button></label>
+<input id="genba" placeholder="現場名">
+<input id="jusho" placeholder="住所">
 </aside>
+
 <div id="map">
 <div class="toolbar">
-<button data-m="pole" class="active">電柱</button>
+<button data-m="pole">電柱</button>
 <button data-m="trans">Tr</button>
-<button data-m="lv">低圧</button>
-<button data-m="svc">引込</button>
-<button data-m="br">分岐</button>
-<button data-m="rect">囲み</button>
+<button data-m="house">🏠</button>
+<button data-m="line">配線</button>
+<button data-m="dist">距離</button>
 </div>
-<div class="compass">↑</div>
-<div class="status" id="st">電柱モード</div>
+<div class="compass" id="comp">↑</div>
 </div>
 </div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-const $=i=>document.getElementById(i);
-const map=L.map('map').setView([38.17,140.86],17);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:20}).addTo(map);
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20}).addTo(map);
+const $=id=>document.getElementById(id);
+
+const map=L.map('map',{doubleClickZoom:false}).setView([38.17,140.86],17);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
 const drawn=L.featureGroup().addTo(map);
-let mode='pole', hist=[], cur=null, r1=null, b1=null;
 
-function setM(m){mode=m;document.querySelectorAll('[data-m]').forEach(b=>b.classList.toggle('active',b.dataset.m===m));$('st').textContent={pole:'電柱',trans:'トランス',lv:'低圧線',svc:'引込線',br:'空中分岐',rect:'囲み'}[m]}
-document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>setM(b.dataset.m));
+let mode='pole',hist=[],cur=null,d1=null;
 
-const icon=(n,tr)=>L.divIcon({html:`<div style="text-align:center"><div class="pole${tr?' trans':''}"></div><div class="pole-label">${n}</div></div>`,iconSize:[30,28],iconAnchor:[15,10],className:''});
+// モード切替
+document.querySelectorAll('[data-m]').forEach(b=>{
+ b.onclick=()=>mode=b.dataset.m;
+});
 
+// アイコン
+const icon=(txt,color)=>L.divIcon({
+ html:`<div style="text-align:center">
+ <div style="width:16px;height:16px;border-radius:50%;background:${color}"></div>
+ <div style="font-size:10px">${txt}</div></div>`
+});
+
+// クリック処理
 map.on('click',e=>{
  if(mode==='pole'||mode==='trans'){
-  const n=prompt('電柱番号'); if(!n) return;
-  const m=L.marker(e.latlng,{icon:icon(n,mode==='trans'),draggable:true}).addTo(drawn);
-  m.k='p'; m.n=n; m.t=mode==='trans'; hist.push(m);
-  m.on('dblclick',()=>{const nn=prompt('修正',m.n); if(nn){m.n=nn; m.setIcon(icon(nn,m.t))}});
- }else if(mode==='lv'){
-  if(!cur){cur=L.polyline([e.latlng],{color:'#000',weight:3}).addTo(drawn); cur.k='lv'; hist.push(cur)} else cur.addLatLng(e.latlng);
- }else if(mode==='svc'){
-  if(!r1){r1=e.latlng} else {const l=L.polyline([r1,e.latlng],{color:'red',weight:3}).addTo(drawn); l.k='svc'; hist.push(l); r1=null}
- }else if(mode==='br'){
-  if(!b1){b1=e.latlng} else {const l=L.polyline([b1,e.latlng],{color:'red',weight:2,dashArray:'5,5'}).addTo(drawn); l.k='br'; hist.push(l); b1=null}
- }else if(mode==='rect'){
-  if(!r1){r1=e.latlng} else {const r=L.rectangle([r1,e.latlng],{color:'red',weight:2,fillColor:'red',fillOpacity:0.1}).addTo(drawn); r.k='r'; hist.push(r); r1=null}
+  const n=prompt('番号'); if(!n)return;
+  const m=L.marker(e.latlng,{icon:icon(n,mode==='trans'?'red':'black'),draggable:true}).addTo(drawn);
+  m.k='p'; m.n=n; hist.push(m);
+ }
+
+ else if(mode==='house'){
+  const m=L.marker(e.latlng,{icon:icon('家','green')}).addTo(drawn);
+  m.k='h'; hist.push(m);
+ }
+
+ else if(mode==='line'){
+  if(!cur){cur=L.polyline([e.latlng]).addTo(drawn);cur.k='l';hist.push(cur);}
+  else cur.addLatLng(e.latlng);
+ }
+
+ else if(mode==='dist'){
+  if(!d1)d1=e.latlng;
+  else{
+   const d=map.distance(d1,e.latlng);
+   L.polyline([d1,e.latlng],{color:'red'}).addTo(drawn);
+   alert("距離:"+Math.round(d)+"m");
+   d1=null;
+  }
  }
 });
-map.on('dblclick',()=>{cur=null});
 
-$('undo').onclick=()=>{const l=hist.pop(); if(l) drawn.removeLayer(l)};
-$('clear').onclick=()=>{if(confirm('全消去?')){drawn.clearLayers();hist=[]}};
+map.on('dblclick',()=>cur=null);
 
+// GPS
 $('gps').onclick=()=>{
  navigator.geolocation.getCurrentPosition(p=>{
-  const la=p.coords.latitude, lo=p.coords.longitude;
-  map.setView([la,lo],19);
-  L.circleMarker([la,lo],{radius:6,color:'blue',fillOpacity:1}).addTo(drawn);
-  fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${la}&lon=${lo}&accept-language=ja`).then(r=>r.json()).then(d=>{$('jusho').value=d.display_name||''});
- },()=>alert('GPS失敗'),{enableHighAccuracy:true});
+  map.setView([p.coords.latitude,p.coords.longitude],19);
+ });
 };
 
-$('search').onclick=()=>{
- const q=$('addr').value; if(!q) return;
- fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(q)+'&countrycodes=jp&limit=1').then(r=>r.json()).then(d=>{if(d[0]){map.setView([d[0].lat,d[0].lon],18);$('jusho').value=q}});
-};
-
+// 保存
 $('save').onclick=()=>{
- const f={genba:$('genba').value,jusho:$('jusho').value,koji:$('koji').value,ruis:$('ruis').value,kyokyu:$('kyokyu').value,dv:$('dv').value,futo:$('futo').value,juten:$('juten').value,kensa:$('kensa').value,mbox:document.querySelector('[name=mbox]:checked').value,biko:$('biko').value};
- localStorage.setItem('den_'+f.genba,JSON.stringify({f,center:map.getCenter(),zoom:map.getZoom(),layers:hist.map(l=>{if(l.k==='p')return{t:'p',la:l.getLatLng().lat,ln:l.getLatLng().lng,n:l.n,tr:l.t}; if(l.k==='lv'||l.k==='svc'||l.k==='br')return{t:l.k,ps:l.getLatLngs().map(p=>[p.lat,p.lng])}; if(l.k==='r'){const b=l.getBounds();return{t:'r',b:[[b.getSouth(),b.getWest()],[b.getNorth(),b.getEast()]]}})}));
- alert('保存しました');
+ const data={
+  genba:$('genba').value,
+  jusho:$('jusho').value,
+  layers:hist.map(l=>{
+   if(l.k==='p')return{t:'p',lat:l.getLatLng().lat,lon:l.getLatLng().lng,n:l.n};
+   if(l.k==='h')return{t:'h',lat:l.getLatLng().lat,lon:l.getLatLng().lng};
+   if(l.k==='l')return{t:'l',pts:l.getLatLngs()};
+  })
+ };
+ localStorage.setItem("MAP_"+data.genba,JSON.stringify(data));
+ alert("保存OK");
 };
 
+// 一覧
+$('list').onclick=()=>{
+ let keys=Object.keys(localStorage).filter(k=>k.startsWith("MAP_"));
+ alert(keys.join("\n"));
+};
+
+// 読込
 $('load').onclick=()=>{
- const k=prompt('現場名'); if(!k) return;
- const d=JSON.parse(localStorage.getItem('den_'+k)||'null'); if(!d) return;
+ const k=prompt("現場名");
+ const d=JSON.parse(localStorage.getItem("MAP_"+k));
+ if(!d)return;
+
  drawn.clearLayers(); hist=[];
  d.layers.forEach(o=>{
-  if(o.t==='p'){const m=L.marker([o.la,o.ln],{icon:icon(o.n,o.tr),draggable:true}).addTo(drawn); m.k='p'; m.n=o.n; m.t=o.tr; hist.push(m)}
-  else if(o.t==='lv'||o.t==='svc'||o.t==='br'){const l=L.polyline(o.ps,{color:o.t==='lv'?'#000':'red',weight:o.t==='br'?2:3,dashArray:o.t==='br'?'5,5':null}).addTo(drawn); l.k=o.t; hist.push(l)}
-  else if(o.t==='r'){const r=L.rectangle(o.b,{color:'red',weight:2,fillColor:'red',fillOpacity:0.1}).addTo(drawn); r.k='r'; hist.push(r)}
+  if(o.t==='p'){
+   const m=L.marker([o.lat,o.lon],{icon:icon(o.n,'black')}).addTo(drawn);
+   m.k='p'; m.n=o.n; hist.push(m);
+  }
+  if(o.t==='h'){
+   const m=L.marker([o.lat,o.lon],{icon:icon('家','green')}).addTo(drawn);
+   m.k='h'; hist.push(m);
+  }
+  if(o.t==='l'){
+   const l=L.polyline(o.pts).addTo(drawn);
+   l.k='l'; hist.push(l);
+  }
  });
- Object.entries(d.f).forEach(([k,v])=>{if($(k))$(k).value=v}); map.setView(d.center,d.zoom);
 };
 
+// undo
+$('undo').onclick=()=>{
+ const l=hist.pop();
+ if(l)drawn.removeLayer(l);
+};
+
+// clear
+$('clear').onclick=()=>{
+ if(confirm("消す？")){
+  drawn.clearLayers();hist=[];
+ }
+};
+
+// スクショ
+$('shot').onclick=()=>{
+ html2canvas(document.body).then(c=>{
+  const a=document.createElement('a');
+  a.href=c.toDataURL();
+  a.download="map.png";
+  a.click();
+ });
+};
+
+// 印刷
+$('print').onclick=()=>window.print();
+
+// LINE
 $('line').onclick=()=>{
- const f={genba:$('genba').value,jusho:$('jusho').value,koji:$('koji').value,ruis:$('ruis').value,kyokyu:$('kyokyu').value,dv:$('dv').value,futo:$('futo').value,juten:$('juten').value,kensa:$('kensa').value,mbox:document.querySelector('[name=mbox]:checked').value,biko:$('biko').value};
- const c=map.getCenter(); const poles=[]; hist.forEach(l=>{if(l.k==='p')poles.push(l.n+(l.t?'(Tr)':''))});
- const txt=`【${f.genba}】
-住所:${f.jusho}
-${f.koji}/${f.kyokyu}/${f.ruis}
-DV:${f.dv} ${f.futo}
-メーター:${f.mbox}
-完成:${f.juten} 検査:${f.kensa}
-位置:https://maps.google.com/?q=${c.lat},${c.lng}
-電柱:${poles.join('、')}
-${f.biko}`;
+ const c=map.getCenter();
+ const txt=`${$('genba').value}
+${$('jusho').value}
+https://maps.google.com/?q=${c.lat},${c.lng}`;
  location.href='https://line.me/R/msg/text/?'+encodeURIComponent(txt);
 };
-setM('pole');
+
+// コンパス
+window.addEventListener("deviceorientation",e=>{
+ const d=e.alpha;
+ $('comp').style.transform=`rotate(${d}deg)`;
+});
 </script>
+
 </body>
 </html>
