@@ -1,245 +1,184 @@
-<!-- ★変更点は中身のバグ修正のみ（UI・構造そのまま） -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>電力申請用 位置図Pro v12.1 FIX</title>
 
-<!-- ❗① 二重script修正（ここ重要） -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<style>
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+.app{display:flex;height:100%}
+.sidebar{width:300px;background:#f8fafc;padding:10px;overflow:auto}
+.map-wrap{flex:1;position:relative}
+#map{width:100%;height:100%}
+.toolbar{position:absolute;top:10px;left:10px;background:#fff;padding:6px;border-radius:6px;z-index:1000}
+button{margin:2px}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<div class="sidebar">
+<input id="f_genba" placeholder="現場名"><br>
+<input id="f_jusho" placeholder="住所"><br>
+<button id="btnGps">GPS</button>
+<button id="btnSave">保存</button>
+<button id="btnLoad">読込</button>
+<button id="btnPng">PNG</button>
+</div>
+
+<div class="map-wrap">
+<div id="map"></div>
+
+<div class="toolbar">
+<button onclick="activeTool='pole'">電柱</button>
+<button onclick="activeTool='trans'">トランス</button>
+<button onclick="activeTool='teiden'">低圧線</button>
+<button onclick="activeTool='building'">建物</button>
+<button onclick="activeTool='text'">文字</button>
+</div>
+
+</div>
+</div>
+
 <script>
 
-const map = L.map('map',{doubleClickZoom:false,zoomControl:true}).setView([35.681236,139.767125],18);
+// ===== 初期化 =====
+const map = L.map('map',{doubleClickZoom:false}).setView([35.681236,139.767125],18);
 
-const baseLayer = L.tileLayer(
- 'https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png',
- { attribution:'国土地理院', maxZoom:21, maxNativeZoom:18 }
-).addTo(map);
-
-map.doubleClickZoom.disable();
+L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png',{
+ maxZoom:21
+}).addTo(map);
 
 const drawn = L.featureGroup().addTo(map);
-const STORAGE_KEY='denryoku_pro_v12_data';
 
-let activeTool=null, undoStack=[], currentLine=null, hikStart=null, bunkiStart=null, buildingPts=[], tempBuild=null;
+// ===== 状態 =====
+let activeTool=null;
+let currentLine=null;
+let buildingPts=[];
+let tempBuild=null;
 
-// ======================
-// 安全ラッパー
-// ======================
-function safe(fn){ try{ fn(); }catch(e){ console.error(e); } }
+// ===== 安全 =====
+function safe(fn){try{fn()}catch(e){console.error(e)}}
 
-// ======================
-// UI操作
-// ======================
-function setActive(btn){
-  document.querySelectorAll('#mapToolbar button').forEach(b=>b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-}
-
-document.getElementById('mapToolbar').addEventListener('click',e=>e.stopPropagation());
-
-document.querySelectorAll('#mapToolbar button').forEach(b=>{
-  b.addEventListener('click',()=>{
-    activeTool=b.dataset.tool;
-    setActive(b);
-
-    currentLine=null;
-    hikStart=null;
-    bunkiStart=null;
-
-    if(tempBuild && map.hasLayer(tempBuild)){
-      map.removeLayer(tempBuild);
-      tempBuild=null;
-    }
-
-    buildingPts=[];
-  });
-});
-
-// ======================
-// Undo（既存仕様維持）
-// ======================
-function addToUndo(l){
-  drawn.addLayer(l);
-  undoStack.push(l);
-  return l;
-}
-
-// ======================
-// 各ツール
-// ======================
+// ===== ツール =====
 function addPole(ll){
-  addToUndo(L.circleMarker(ll,{radius:9,color:'#000',weight:2.5,fillColor:'#fff',fillOpacity:1}));
+ drawn.addLayer(L.circleMarker(ll,{radius:9,color:'#000'}));
 }
 
 function addTrans(ll){
-  addToUndo(L.circleMarker(ll,{radius:9,color:'#dc2626',weight:2.5,fillColor:'#fff',fillOpacity:1}));
+ drawn.addLayer(L.circleMarker(ll,{radius:9,color:'#dc2626'}));
 }
 
 function handleTeiden(ll){
-  if(!currentLine){
-    currentLine=L.polyline([ll],{color:'#000',weight:3});
-    addToUndo(currentLine);
-  }else{
-    currentLine.addLatLng(ll);
-  }
-}
-
-function handleHikikomi(ll){
-  if(!hikStart){
-    hikStart=ll;
-
-    const temp=L.circleMarker(ll,{radius:4,color:'#dc2626',fillColor:'#dc2626'}).addTo(map);
-
-    setTimeout(()=>{
-      if(map.hasLayer(temp)) map.removeLayer(temp);
-    },700);
-
-    return;
-  }
-
-  const line=L.polyline([hikStart,ll],{color:'#dc2626',weight:3});
-  addToUndo(line);
-
-  const dist=map.distance(hikStart,ll);
-  const mid=L.latLng((hikStart.lat+ll.lat)/2,(hikStart.lng+ll.lng)/2);
-
-  addToUndo(L.marker(mid,{
-    icon:L.divIcon({className:'dist-label',html:`<span>${dist.toFixed(1)}m</span>`}),
-    interactive:false
-  }));
-
-  hikStart=null;
-}
-
-function handleBunki(ll){
-  if(!bunkiStart){
-    bunkiStart=ll;
-
-    const temp=L.circleMarker(ll,{radius:5,color:'#f59e0b',fillColor:'#f59e0b'}).addTo(map);
-
-    setTimeout(()=>{
-      if(map.hasLayer(temp)) map.removeLayer(temp);
-    },600);
-
-    return;
-  }
-
-  addToUndo(L.polyline([bunkiStart,ll],{
-    color:'#dc2626',weight:2.5,dashArray:'6,6'
-  }));
-
-  bunkiStart=null;
+ if(!currentLine){
+  currentLine=L.polyline([ll],{color:'#000'}).addTo(drawn);
+ }else{
+  currentLine.addLatLng(ll);
+ }
 }
 
 function handleBuilding(ll){
-  buildingPts.push(ll);
+ buildingPts.push(ll);
 
-  if(tempBuild && map.hasLayer(tempBuild)) map.removeLayer(tempBuild);
+ if(tempBuild) map.removeLayer(tempBuild);
 
-  tempBuild=L.polyline(buildingPts,{color:'#dc2626',weight:2,dashArray:'5,5'}).addTo(map);
+ tempBuild=L.polyline(buildingPts,{dashArray:'5,5',color:'#dc2626'}).addTo(map);
 }
 
 function finishBuilding(){
-  if(buildingPts.length<3) return;
+ if(buildingPts.length<3) return;
 
-  if(tempBuild && map.hasLayer(tempBuild)){
-    map.removeLayer(tempBuild);
-    tempBuild=null;
-  }
+ if(tempBuild) map.removeLayer(tempBuild);
 
-  const poly=L.polygon(buildingPts,{
-    color:'#dc2626',weight:4,dashArray:'10,6',fillColor:'#dc2626',fillOpacity:0.08
-  });
-
-  addToUndo(poly);
-
-  const c=poly.getBounds().getCenter();
-
-  addToUndo(L.marker(c,{
-    icon:L.divIcon({className:'building-label',html:'建物'}),
-    interactive:false
-  }));
-
-  buildingPts=[];
+ drawn.addLayer(L.polygon(buildingPts,{color:'#dc2626'}));
+ buildingPts=[];
 }
 
 function handleText(ll){
-  const txt=prompt('テキストを入力');
-  if(!txt) return;
+ let t=prompt("テキスト");
+ if(!t) return;
+ t=t.replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-  const safeTxt = txt.replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
-  addToUndo(L.marker(ll,{
-    icon:L.divIcon({className:'text-label',html:`<div>${safeTxt}</div>`})
-  }));
+ drawn.addLayer(L.marker(ll,{
+  icon:L.divIcon({html:`<div>${t}</div>`})
+ }));
 }
 
-// ======================
-// MAPイベント
-// ======================
+// ===== イベント =====
 map.on('click',e=>{
-  if(!activeTool) return;
+ if(!activeTool) return;
 
-  const ll=e.latlng;
-
-  safe(()=>{
-    switch(activeTool){
-      case 'pole': addPole(ll); break;
-      case 'trans': addTrans(ll); break;
-      case 'teiden': handleTeiden(ll); break;
-      case 'hikikomi': handleHikikomi(ll); break;
-      case 'bunki': handleBunki(ll); break;
-      case 'building': handleBuilding(ll); break;
-      case 'text': handleText(ll); break;
-    }
-  });
+ safe(()=>{
+  switch(activeTool){
+   case 'pole':addPole(e.latlng);break;
+   case 'trans':addTrans(e.latlng);break;
+   case 'teiden':handleTeiden(e.latlng);break;
+   case 'building':handleBuilding(e.latlng);break;
+   case 'text':handleText(e.latlng);break;
+  }
+ });
 });
 
 map.on('dblclick',()=>{
-  if(activeTool==='teiden') currentLine=null;
-  if(activeTool==='building') finishBuilding();
+ if(activeTool==='teiden') currentLine=null;
+ if(activeTool==='building') finishBuilding();
 });
 
-// ======================
-// GPS（完全安定）
-// ======================
-document.getElementById('btnGps').onclick=()=>{
-  if(!navigator.geolocation){
-    alert('GPS未対応');
-    return;
-  }
+// ===== GPS =====
+btnGps.onclick=()=>{
+ if(!navigator.geolocation) return alert("未対応");
 
-  navigator.geolocation.getCurrentPosition(pos=>{
-    const lat=pos.coords.latitude;
-    const lng=pos.coords.longitude;
-
-    map.setView([lat,lng],19);
-
-  },err=>{
-    alert('位置取得失敗');
-  },{enableHighAccuracy:true,timeout:10000});
+ navigator.geolocation.getCurrentPosition(p=>{
+  map.setView([p.coords.latitude,p.coords.longitude],19);
+ },()=>alert("失敗"),{timeout:10000});
 };
 
-// ======================
-// PNG（失敗対策）
-// ======================
-document.getElementById('btnPng').onclick=()=>{
-  html2canvas(document.querySelector('.map-wrap'),{
-    useCORS:true,
-    scale:2,
-    backgroundColor:'#fff'
-  })
-  .then(canvas=>{
-    const a=document.createElement('a');
-    a.href=canvas.toDataURL('image/png');
-    a.download='位置図.png';
-    a.click();
-  })
-  .catch(e=>{
-    console.error(e);
-    alert('PNG出力失敗');
-  });
+// ===== 保存 =====
+btnSave.onclick=()=>{
+ localStorage.setItem("data",JSON.stringify({
+  form:{g:f_genba.value,j:f_jusho.value},
+  draw:drawn.toGeoJSON()
+ }));
+ alert("保存OK");
 };
 
-// ======================
-// MAP安定化
-// ======================
+// ===== 読込 =====
+btnLoad.onclick=()=>{
+ const d=JSON.parse(localStorage.getItem("data"));
+ if(!d) return alert("なし");
+
+ f_genba.value=d.form.g||"";
+ f_jusho.value=d.form.j||"";
+
+ drawn.clearLayers();
+ L.geoJSON(d.draw).addTo(drawn);
+};
+
+// ===== PNG =====
+btnPng.onclick=()=>{
+ html2canvas(document.body,{useCORS:true})
+ .then(c=>{
+  const a=document.createElement('a');
+  a.href=c.toDataURL();
+  a.download="map.png";
+  a.click();
+ })
+ .catch(()=>alert("PNG失敗"));
+};
+
+// ===== 安定 =====
 setTimeout(()=>map.invalidateSize(),300);
 window.addEventListener('resize',()=>map.invalidateSize());
 
 </script>
+
+</body>
+</html>
