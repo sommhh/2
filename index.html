@@ -2,33 +2,43 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>位置図Pro 最強版</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>位置図Pro 完全版</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
 <style>
-body{margin:0;font-family:sans-serif}
-header{background:#111;color:#fff;padding:6px;display:flex;gap:5px;flex-wrap:wrap}
-button{padding:6px;border-radius:6px;border:0}
+body{margin:0;font-family:Meiryo,sans-serif}
+header{background:#0f172a;color:#fff;padding:8px;display:flex;gap:5px;flex-wrap:wrap}
+header h1{font-size:14px;margin:0 8px 0 0;flex:1}
+button{padding:8px;border-radius:6px;border:0;background:#e2e8f0}
 .primary{background:#2563eb;color:#fff}
-#app{display:flex;height:calc(100vh - 40px)}
-aside{width:260px;background:#f1f5f9;padding:8px;overflow:auto}
-#map{flex:1}
-.toolbar{position:absolute;top:5px;left:5px;background:#fff;padding:5px;z-index:1000}
-.compass{position:absolute;top:5px;right:5px;background:#fff;width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+
+#app{display:flex;height:calc(100vh - 42px)}
+aside{width:300px;background:#f8fafc;border-right:1px solid #ccc;padding:10px;overflow:auto}
+aside input,aside select,aside textarea{width:100%;padding:6px;margin-top:3px}
+
+#map{flex:1;position:relative}
+
+.toolbar{position:absolute;top:8px;left:8px;background:#fff;padding:5px;border-radius:6px;z-index:1000}
+.toolbar button.active{background:#2563eb;color:#fff}
+
+.compass{position:absolute;top:8px;right:8px;width:50px;height:50px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center}
+
+.status{position:absolute;bottom:0;left:0;right:0;background:#000;color:#fff;font-size:11px;padding:3px}
 </style>
 </head>
 
 <body>
 
 <header>
+<h1>電力申請用 位置図Pro</h1>
 <button id="gps" class="primary">GPS</button>
 <button id="save">保存</button>
-<button id="list">一覧</button>
 <button id="load">読込</button>
+<button id="list">一覧</button>
 <button id="undo">戻る</button>
 <button id="clear">全消</button>
 <button id="shot">📸</button>
@@ -37,21 +47,45 @@ aside{width:260px;background:#f1f5f9;padding:8px;overflow:auto}
 </header>
 
 <div id="app">
+
+<!-- ★元フォーム完全復元 -->
 <aside>
-<input id="genba" placeholder="現場名">
-<input id="jusho" placeholder="住所">
+<label>現場名<input id="genba"></label>
+<label>住所<input id="jusho"></label>
+<label>工事種別<select id="koji"><option>本設</option><option>仮設</option></select></label>
+<label>二類/三類<select id="ruis"><option>二類</option><option>三類</option></select></label>
+<label>供給区分<select id="kyokyu">
+<option>単相2線式 100V</option>
+<option selected>単相3線式 100/200V</option>
+<option>三相3線式 200V</option>
+</select></label>
+<label>DV線種<select id="dv"><option>DV2線</option><option>DV3線</option></select></label>
+<label>太さ<select id="futo">
+<option>3.2mm</option><option>22mm²</option><option>38mm²</option>
+<option>60mm²</option><option>100mm²</option>
+</select></label>
+<label>受点完成日<input id="juten" type="date"></label>
+<label>検査希望日<input id="kensa" type="date"></label>
+<label>メーター
+<input type="radio" name="mbox" value="ベージュ" checked>ベージュ
+<input type="radio" name="mbox" value="グレー">グレー
+</label>
+<label>備考<textarea id="biko"></textarea></label>
 </aside>
 
 <div id="map">
 <div class="toolbar">
-<button data-m="pole">電柱</button>
+<button data-m="pole" class="active">電柱</button>
 <button data-m="trans">Tr</button>
 <button data-m="house">🏠</button>
-<button data-m="line">配線</button>
+<button data-m="lv">低圧</button>
 <button data-m="dist">距離</button>
 </div>
+
 <div class="compass" id="comp">↑</div>
+<div class="status" id="st">電柱</div>
 </div>
+
 </div>
 
 <script>
@@ -64,9 +98,14 @@ const drawn=L.featureGroup().addTo(map);
 
 let mode='pole',hist=[],cur=null,d1=null;
 
-// モード切替
+// モード
 document.querySelectorAll('[data-m]').forEach(b=>{
- b.onclick=()=>mode=b.dataset.m;
+ b.onclick=()=>{
+  mode=b.dataset.m;
+  document.querySelectorAll('[data-m]').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  $('st').textContent=b.textContent;
+ };
 });
 
 // アイコン
@@ -76,24 +115,22 @@ const icon=(txt,color)=>L.divIcon({
  <div style="font-size:10px">${txt}</div></div>`
 });
 
-// クリック処理
+// クリック
 map.on('click',e=>{
  if(mode==='pole'||mode==='trans'){
   const n=prompt('番号'); if(!n)return;
   const m=L.marker(e.latlng,{icon:icon(n,mode==='trans'?'red':'black'),draggable:true}).addTo(drawn);
-  m.k='p'; m.n=n; hist.push(m);
+  m.k='p'; m.n=n; m.t=(mode==='trans');
+  hist.push(m);
  }
-
  else if(mode==='house'){
   const m=L.marker(e.latlng,{icon:icon('家','green')}).addTo(drawn);
   m.k='h'; hist.push(m);
  }
-
- else if(mode==='line'){
-  if(!cur){cur=L.polyline([e.latlng]).addTo(drawn);cur.k='l';hist.push(cur);}
+ else if(mode==='lv'){
+  if(!cur){cur=L.polyline([e.latlng],{color:'#000'}).addTo(drawn);cur.k='lv';hist.push(cur);}
   else cur.addLatLng(e.latlng);
  }
-
  else if(mode==='dist'){
   if(!d1)d1=e.latlng;
   else{
@@ -111,51 +148,66 @@ map.on('dblclick',()=>cur=null);
 $('gps').onclick=()=>{
  navigator.geolocation.getCurrentPosition(p=>{
   map.setView([p.coords.latitude,p.coords.longitude],19);
- });
+ },e=>alert("GPS失敗:"+e.message));
 };
 
-// 保存
+// 保存（フォーム込み）
 $('save').onclick=()=>{
- const data={
+ const f={
   genba:$('genba').value,
   jusho:$('jusho').value,
-  layers:hist.map(l=>{
-   if(l.k==='p')return{t:'p',lat:l.getLatLng().lat,lon:l.getLatLng().lng,n:l.n};
-   if(l.k==='h')return{t:'h',lat:l.getLatLng().lat,lon:l.getLatLng().lng};
-   if(l.k==='l')return{t:'l',pts:l.getLatLngs()};
-  })
+  koji:$('koji').value,
+  ruis:$('ruis').value,
+  kyokyu:$('kyokyu').value,
+  dv:$('dv').value,
+  futo:$('futo').value,
+  juten:$('juten').value,
+  kensa:$('kensa').value,
+  mbox:document.querySelector('[name=mbox]:checked').value,
+  biko:$('biko').value
  };
- localStorage.setItem("MAP_"+data.genba,JSON.stringify(data));
- alert("保存OK");
-};
 
-// 一覧
-$('list').onclick=()=>{
- let keys=Object.keys(localStorage).filter(k=>k.startsWith("MAP_"));
- alert(keys.join("\n"));
+ const layers=hist.map(l=>{
+  if(l.k==='p')return{t:'p',lat:l.getLatLng().lat,lon:l.getLatLng().lng,n:l.n,tr:l.t};
+  if(l.k==='h')return{t:'h',lat:l.getLatLng().lat,lon:l.getLatLng().lng};
+  if(l.k==='lv')return{t:'lv',pts:l.getLatLngs().map(p=>[p.lat,p.lng])};
+ }).filter(Boolean);
+
+ localStorage.setItem("MAP_"+f.genba,JSON.stringify({f,layers}));
+ alert("保存OK");
 };
 
 // 読込
 $('load').onclick=()=>{
- const k=prompt("現場名");
- const d=JSON.parse(localStorage.getItem("MAP_"+k));
- if(!d)return;
+ const k=prompt("現場名"); if(!k)return;
+ const d=JSON.parse(localStorage.getItem("MAP_"+k)||'null');
+ if(!d)return alert("なし");
 
  drawn.clearLayers(); hist=[];
+
  d.layers.forEach(o=>{
   if(o.t==='p'){
-   const m=L.marker([o.lat,o.lon],{icon:icon(o.n,'black')}).addTo(drawn);
-   m.k='p'; m.n=o.n; hist.push(m);
+   const m=L.marker([o.lat,o.lon],{icon:icon(o.n,o.tr?'red':'black')}).addTo(drawn);
+   m.k='p'; m.n=o.n; m.t=o.tr; hist.push(m);
   }
   if(o.t==='h'){
    const m=L.marker([o.lat,o.lon],{icon:icon('家','green')}).addTo(drawn);
    m.k='h'; hist.push(m);
   }
-  if(o.t==='l'){
-   const l=L.polyline(o.pts).addTo(drawn);
-   l.k='l'; hist.push(l);
+  if(o.t==='lv'){
+   const l=L.polyline(o.pts,{color:'#000'}).addTo(drawn);
+   l.k='lv'; hist.push(l);
   }
  });
+
+ Object.entries(d.f).forEach(([k,v])=>{
+  if($(k))$(k).value=v;
+ });
+};
+
+// 一覧
+$('list').onclick=()=>{
+ alert(Object.keys(localStorage).filter(k=>k.startsWith("MAP_")).join("\n"));
 };
 
 // undo
@@ -166,15 +218,15 @@ $('undo').onclick=()=>{
 
 // clear
 $('clear').onclick=()=>{
- if(confirm("消す？")){
-  drawn.clearLayers();hist=[];
+ if(confirm("全削除？")){
+  drawn.clearLayers(); hist=[];
  }
 };
 
 // スクショ
 $('shot').onclick=()=>{
  html2canvas(document.body).then(c=>{
-  const a=document.createElement('a');
+  const a=document.createElement("a");
   a.href=c.toDataURL();
   a.download="map.png";
   a.click();
@@ -195,8 +247,9 @@ https://maps.google.com/?q=${c.lat},${c.lng}`;
 
 // コンパス
 window.addEventListener("deviceorientation",e=>{
- const d=e.alpha;
- $('comp').style.transform=`rotate(${d}deg)`;
+ if(e.alpha!=null){
+  $('comp').style.transform=`rotate(${e.alpha}deg)`;
+ }
 });
 </script>
 
