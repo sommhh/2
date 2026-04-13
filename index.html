@@ -1,151 +1,459 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
 
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
 <script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
-
 <meta charset="UTF-8">
-<title>電力申請 v31 最終版</title>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-
+<title>電力申請 v34 Mobile</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-/* ===== CSSはそのまま ===== */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,sans-serif;touch-action:manipulation}
-body{width:100%;background:#fff;touch-action:manipulation}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-text-size-adjust:100%}
+body{background:#fff;overscroll-behavior:none}
 button,input,select,textarea{font-family:inherit;font-size:16px}
-button{cursor:pointer;touch-action:manipulation}
-
-.app{display:flex;height:100vh;width:100vw}
-.sidebar{width:280px;background:#fff;display:flex;flex-direction:column;z-index:1000;box-shadow:2px 0 8px rgba(0,0,0,0.12);transition:transform .25s}
+button{cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.app{display:flex;height:100vh;height:100dvh;width:100vw}
+.sidebar{width:300px;background:#fff;display:flex;flex-direction:column;z-index:1000;box-shadow:2px 0 12px rgba(0,0,0,0.15);transition:transform .25s ease}
 .sidebar.hide{transform:translateX(-100%)}
-@media(max-width:768px){.sidebar{position:absolute;inset:0;top:auto;height:58vh;max-width:100%;border-radius:14px 14px 0 0;box-shadow:0 -3px 16px rgba(0,0,0,0.15)}.sidebar.hide{transform:translateY(calc(100% - 48px))}}
-
-.head{background:#1e3a8a;color:#fff;padding:8px}
-.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-.top h1{font-size:14px;font-weight:700}
-.tg{width:28px;height:28px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:5px;color:#fff;font-size:14px}
-.btns{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
-.btns button{height:30px;background:#fff;color:#1e3a8a;border:none;border-radius:4px;font-size:10px;font-weight:600}
-
-.form{flex:1;overflow-y:auto;padding:8px;background:#f9fafb}
-/* （以下CSS全部そのままなので省略せず元通りでOK） */
+@media(max-width:768px){.sidebar{position:absolute;inset:0;top:auto;height:60vh;max-width:100%;border-radius:16px 16px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,0.2);z-index:2000}.sidebar.hide{transform:translateY(calc(100% - 50px))}}
+.head{background:#1e3a8a;color:#fff;padding:10px; padding-top:calc(10px + env(safe-area-inset-top))}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.top h1{font-size:15px;font-weight:700}
+.tg{width:32px;height:32px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:6px;color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center}
+.btns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.btns button{height:36px;background:#fff;color:#1e3a8a;border:none;border-radius:6px;font-size:11px;font-weight:600;active:scale(0.96)}
+.btns button:active{transform:scale(0.96)}
+.form{flex:1;overflow-y:auto;padding:10px;background:#f9fafb;-webkit-overflow-scrolling:touch}
+.f{margin-bottom:10px}
+.f label{display:block;font-size:12px;font-weight:600;margin-bottom:3px;color:#374151}
+.f input,.f select,.f textarea{width:100%;padding:9px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;height:40px;background:#fff}
+.f textarea{height:60px;resize:vertical}
+.r{display:flex;gap:10px;flex-wrap:wrap}
+.r.v{flex-direction:column;gap:4px}
+.r label{display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;padding:4px}
+.r input{width:18px;height:18px;accent-color:#2563eb}
+.chk{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.chk label{font-size:12px;display:flex;align-items:center;gap:4px;padding:4px 6px;background:#fff;border:1px solid #e5e7eb;border-radius:5px;cursor:pointer}
+.mapw{flex:1;position:relative;background:#cbd5e1;overflow:hidden}
+#map{width:100%;height:100%;cursor:crosshair;touch-action:none;-webkit-touch-callout:none}
+.tools{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(255,255,255,0.98);padding:6px;border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,0.2);display:flex;gap:4px;max-width:calc(100% - 20px);overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(6px + env(safe-area-inset-bottom))}
+.tools button{height:46px;min-width:58px;padding:0 10px;background:#fff;border:2px solid #e5e7eb;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap;flex-shrink:0;transition:all .15s}
+.tools button.on{background:#2563eb;color:#fff;border-color:#2563eb;transform:scale(1.05)}
+.tools button:active{transform:scale(0.95)}
+.hint{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);color:#fff;padding:8px 14px;border-radius:16px;font-size:12px;z-index:1000;pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .25s;max-width:90%;text-align:center}
+.hint.show{opacity:1}
+.fab{position:absolute;bottom:80px;right:14px;width:50px;height:50px;border-radius:25px;background:#1e3a8a;color:#fff;border:none;font-size:20px;z-index:1001;display:none;box-shadow:0 3px 10px rgba(0,0,0,0.3);align-items:center;justify-content:center}
+.sidebar.hide ~ .mapw .fab{display:flex}
+@media(max-width:768px){.fab{display:flex}}
+/* markers */
+.marker-pole{width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid #000;box-shadow:0 2px 6px rgba(0,0,0,0.3)}
+.marker-trans{width:26px;height:26px;border-radius:50%;background:#fff;border:3px solid #dc2626;box-shadow:0 2px 6px rgba(0,0,0,0.3)}
+.marker-label{background:#fff;border:2px solid #000;padding:3px 6px;font-size:11px;font-weight:700;white-space:nowrap;border-radius:4px;box-shadow:0 2px 4px rgba(0,0,0,0.25);transform:translate(-50%,-150%)}
+.marker-label.red{border-color:#dc2626;color:#dc2626;background:#fef2f2}
+.text-lab{background:#fff;border:2px solid #1f2937;padding:4px 7px;font-size:12px;font-weight:600;white-space:nowrap;border-radius:5px;box-shadow:0 2px 4px rgba(0,0,0,0.2)}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:5000;display:none;align-items:flex-end;justify-content:center;padding:0}
+.modal.show{display:flex}
+.modal-box{background:#fff;width:100%;max-width:500px;border-radius:20px 20px 0 0;padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom));animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal h3{font-size:16px;margin-bottom:12px;color:#111}
+.modal input{width:100%;padding:12px;border:2px solid #d1d5db;border-radius:10px;font-size:17px;margin-bottom:14px}
+.modal input:focus{outline:none;border-color:#2563eb}
+.modal-btns{display:flex;gap:10px}
+.modal-btns button{flex:1;height:46px;border:none;border-radius:10px;font-size:15px;font-weight:600}
+.modal-ok{background:#2563eb;color:#fff}
+.modal-cancel{background:#f3f4f6;color:#374151}
+.leaflet-control-attribution{font-size:10px}
 </style>
 </head>
-
 <body>
 <div class="app">
-  <!-- UIそのまま -->
+  <div class="sidebar" id="sb">
+    <div class="head">
+      <div class="top"><h1>⚡ 電力申請 v34</h1><button class="tg" id="tg">▼</button></div>
+      <div class="btns">
+        <button id="gps">📍 GPS</button>
+        <button id="save">💾 保存</button>
+        <button id="load">📂 読込</button>
+        <button id="undo">↩️ 戻る</button>
+        <button id="clear">🗑️ 全消</button>
+        <button id="share">📤 共有</button>
+      </div>
+    </div>
+    <div class="form">
+      <div class="f"><label>現場名</label><input id="genba" placeholder="〇〇邸" autocomplete="off"></div>
+      <div class="f"><label>住所</label><input id="jusho" placeholder="宮城県名取市..." autocomplete="off"></div>
+      <div class="f"><label>工事</label><div class="r"><label><input type="radio" name="k" value="本設" checked>本設</label><label><input type="radio" name="k" value="仮設">仮設</label></div></div>
+      <div class="f"><label>供給</label><div class="r v"><label><input type="radio" name="s" value="単相2線式 100V">単相2線 100V</label><label><input type="radio" name="s" value="単相3線式 100V/200V" checked>単相3線 100/200V</label><label><input type="radio" name="s" value="三相3線式 200V">三相3線 200V</label></div></div>
+      <div class="f"><label>契約</label><div class="r"><label><input type="radio" name="c" value="従量電灯B">従量B</label><label><input type="radio" name="c" value="従量電灯C">従量C</label></div></div>
+      <div class="f"><label>容量</label><select id="amp"><option value="">選択</option><option>15A</option><option>20A</option><option>30A</option><option>40A</option><option>50A</option><option>60A</option><option>6kVA</option><option>8kVA</option><option>10kVA</option><option>12kVA</option><option>15kVA</option></select></div>
+      <div class="f"><label>引込線</label><div style="display:flex;gap:6px"><select id="dv" style="flex:1"><option>DV2線</option><option selected>DV3線</option></select><select id="sz" style="width:80px"><option>3.2mm</option><option>22mm²</option><option>38mm²</option><option>60mm²</option></select></div></div>
+      <div class="f"><label>区分</label><div class="r"><label><input type="checkbox" id="h1">二類</label><label><input type="checkbox" id="h2">三類</label><label><input type="checkbox" id="h3">空中分岐</label></div></div>
+      <div class="f"><label>メーター</label><div class="r"><label><input type="radio" name="m" value="ベージュ" checked>ベージュ</label><label><input type="radio" name="m" value="グレー">グレー</label><label><input type="radio" name="m" value="なし">なし</label></div></div>
+      <div class="f"><label>設備</label><div class="chk"><label><input type="checkbox" id="e1">太陽光</label><label><input type="checkbox" id="e2">エコキュート</label><label><input type="checkbox" id="e3">IH</label></div></div>
+      <div class="f"><label>受点予定</label><input id="juten" type="date"></div>
+      <div class="f"><label>検査日</label><input id="kensa" type="date"></div>
+      <div class="f"><label>備考</label><textarea id="biko" rows="2" placeholder="特記事項"></textarea></div>
+    </div>
+  </div>
+  <div class="mapw">
+    <div id="map"></div>
+    <button class="fab" id="fab">☰</button>
+    <div class="tools" id="tools">
+      <button data-t="pole">⚫<br>電柱</button>
+      <button data-t="trans"><span style="color:#dc2626">🔴</span><br>トランス</button>
+      <button data-t="line">〰️<br>低圧</button>
+      <button data-t="hikikomi">↘️<br>引込</button>
+      <button data-t="bunki">🔀<br>分岐</button>
+      <button data-t="bld">⬜<br>建物</button>
+      <button data-t="bldf">⬡<br>自由</button>
+      <button data-t="text">📝<br>文字</button>
+    </div>
+    <div class="hint" id="hint">ツールを選んで地図をタップ</div>
+  </div>
+</div>
+
+<!-- 入力モーダル -->
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h3 id="modal-title">入力</h3>
+    <input id="modal-input" type="text" placeholder="" enterkeyhint="done">
+    <div class="modal-btns">
+      <button class="modal-cancel" id="modal-cancel">キャンセル</button>
+      <button class="modal-ok" id="modal-ok">OK</button>
+    </div>
+  </div>
 </div>
 
 <script>
 !function(){
   'use strict';
-
-  /* ===== JSも完全そのまま（あなたのコード） ===== */
-  var map = document.getElementById('map');
-  var ready = document.getElementById('ready');
-  var hint = document.getElementById('hint');
-
-  var state = {active:false,tool:null,objs:[],undo:[],tmp:[],last:0,lastTap:0};
-
-  function $(id){return document.getElementById(id)}
-  function getR(n){var e=document.querySelector('input[name="'+n+'"]:checked');return e?e.value:''}
-
-  function show(t){
-    hint.textContent=t;
-    hint.classList.add('show');
-    setTimeout(function(){hint.classList.remove('show')},1500)
+  const $=id=>document.getElementById(id);
+  const hint=$('hint'), modal=$('modal'), modalInput=$('modal-input');
+  let modalResolve=null;
+  
+  // モーダル入力（iOS prompt代替）
+  function ask(title, placeholder=''){
+    return new Promise(res=>{
+      $('modal-title').textContent=title;
+      modalInput.placeholder=placeholder;
+      modalInput.value='';
+      modal.classList.add('show');
+      setTimeout(()=>modalInput.focus(),100);
+      modalResolve=res;
+    });
   }
-
-  function vib(p){if(navigator.vibrate)try{navigator.vibrate(p||10)}catch(e){}}
-
-  function activate(){
-    if(state.active)return;
-    state.active=true;
-    ready.classList.add('hide');
-    show('地図をタップして配置');
-  }
-
-  function pos(e){
-    var r=map.getBoundingClientRect(),x,y;
-    if(e.touches&&e.touches[0]){x=e.touches[0].clientX;y=e.touches[0].clientY}
-    else{x=e.clientX;y=e.clientY}
-    var px=((x-r.left)/r.width)*100;
-    var py=((y-r.top)/r.height)*100;
-    return{x:px,y:py,cx:x,cy:y}
-  }
-
+  $('modal-ok').onclick=()=>{modal.classList.remove('show'); if(modalResolve)modalResolve(modalInput.value); modalResolve=null;};
+  $('modal-cancel').onclick=()=>{modal.classList.remove('show'); if(modalResolve)modalResolve(null); modalResolve=null;};
+  modalInput.onkeydown=e=>{if(e.key==='Enter')$('modal-ok').click()};
+  
+  function show(t){hint.textContent=t;hint.classList.add('show');setTimeout(()=>hint.classList.remove('show'),1800)}
+  function vib(p){if(navigator.vibrate)try{navigator.vibrate(p)}catch(e){}}
+  const getR=n=>document.querySelector(`input[name="${n}"]:checked`)?.value||'';
+  const setR=(n,v)=>{document.querySelectorAll(`input[name="${n}"]`).forEach(e=>e.checked=false); if(v){const e=document.querySelector(`input[name="${n}"][value="${v}"]`); if(e)e.checked=true}};
+  
+  // --- Leaflet 地図 ---
+  const map=L.map('map',{zoomControl:false,attributionControl:true,tap:true,touchZoom:true,dragging:true}).setView([38.172,140.882],18);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:21,attribution:'© OpenStreetMap'}).addTo(map);
+  L.control.zoom({position:'bottomright'}).addTo(map);
+  setTimeout(()=>map.invalidateSize(),300);
+  window.addEventListener('resize',()=>map.invalidateSize());
+  window.addEventListener('orientationchange',()=>setTimeout(()=>map.invalidateSize(),400));
+  
+  const state={tool:null,objs:[],undo:[],tmp:[],last:0};
+  
   function add(t,d){
-    var o={t:t,id:'o'+Date.now()+Math.random().toString(36).slice(2,5),d:d};
-    state.objs.push(o);
-    state.undo.push(o);
-    render(o);
-    save();
-    vib(10);
-    return o;
+    const o={t,id:'o'+Date.now()+Math.random().toString(36).slice(2,6),d};
+    state.objs.push(o); state.undo.push(o); if(state.undo.length>120)state.undo.shift();
+    render(o); save(); vib(10); return o;
   }
-
+  
   function render(o){
-    var el=document.createElement('div');
-    el.className='obj';
-    el.style.left=o.d.x+'%';
-    el.style.top=o.d.y+'%';
-    map.appendChild(el);
-  }
-
-  function clearAll(){
-    map.querySelectorAll('.obj').forEach(e=>e.remove())
-  }
-
-  function save(){
-    try{
-      localStorage.setItem('dq31',JSON.stringify({
-        v:'31',
-        o:state.objs
-      }));
-      return true;
-    }catch(e){return false}
-  }
-
-  function load(){
-    try{
-      var d=JSON.parse(localStorage.getItem('dq31'));
-      if(!d)return;
-      state.objs=d.o||[];
-      clearAll();
-      state.objs.forEach(render);
-      return true;
-    }catch(e){return false}
-  }
-
-  /* ===== ここからイベント ===== */
-
-  map.addEventListener('pointerdown',function(e){
-    if(!state.tool)return;
-    if(!state.active)activate();
-    var p=pos(e);
-    add(state.tool,p);
-  },{passive:false});
-
-  document.querySelectorAll('#tools button').forEach(function(b){
-    b.onclick=function(){
-      state.tool=b.dataset.t;
-      activate();
-      show(state.tool+'モード');
+    const d=o.d;
+    if(o.t==='pole'||o.t==='trans'){
+      const html=`<div class="${o.t==='pole'?'marker-pole':'marker-trans'}"></div>`;
+      o._m=L.marker([d.lat,d.lng],{icon:L.divIcon({className:'',html,iconSize:[24,24],iconAnchor:[12,12]}),interactive:false}).addTo(map);
+      if(d.n){o._l=L.marker([d.lat,d.lng],{icon:L.divIcon({className:'',html:`<div class="marker-label${o.t==='trans'?' red':''}">${d.n}</div>`}),interactive:false}).addTo(map)}
+    }else if(o.t==='line'||o.t==='hikikomi'||o.t==='bunki'){
+      const opt={color:o.t==='line'?'#000':'#dc2626',weight:4,opacity:0.9,interactive:false};
+      if(o.t==='bunki')opt.dashArray='6,8';
+      o._m=L.polyline([[d.p1.lat,d.p1.lng],[d.p2.lat,d.p2.lng]],opt).addTo(map);
+      if(d.dist){const mid=[(d.p1.lat+d.p2.lat)/2,(d.p1.lng+d.p2.lng)/2]; o._l=L.marker(mid,{icon:L.divIcon({className:'',html:`<div class="marker-label red">${d.dist}m</div>`}),interactive:false}).addTo(map)}
+    }else if(o.t==='bld'||o.t==='bldf'){
+      const latlngs=d.ps.map(p=>[p.lat,p.lng]);
+      o._m=L.polygon(latlngs,{color:o.t==='bldf'?'#2563eb':'#dc2626',weight:3,fillColor:o.t==='bldf'?'#2563eb':'#dc2626',fillOpacity:0.15,interactive:false}).addTo(map);
+    }else if(o.t==='text'){
+      o._m=L.marker([d.lat,d.lng],{icon:L.divIcon({className:'',html:`<div class="text-lab">${d.text}</div>`}),interactive:false}).addTo(map);
     }
+  }
+  
+  function clearAll(){state.objs.forEach(o=>{if(o._m)map.removeLayer(o._m);if(o._l)map.removeLayer(o._l)}); state.objs=[]}
+  
+  // 地図タップ - ペイント
+  map.on('click', async e=>{
+    if(!state.tool){show('先にツールを選択'); vib(20); return}
+    const now=Date.now(); if(now-state.last<180)return; state.last=now;
+    const ll=e.latlng;
+    
+    if(state.tool==='pole'){const n=await ask('電柱番号','例: 12-345'); if(n===null)return; add('pole',{lat:ll.lat,lng:ll.lng,n:n.trim()}); show('電柱配置')}
+    else if(state.tool==='trans'){const n=await ask('トランス番号',''); if(n===null)return; add('trans',{lat:ll.lat,lng:ll.lng,n:n.trim()}); show('トランス配置')}
+    else if(state.tool==='line'){state.tmp.push(ll); if(state.tmp.length===2){add('line',{p1:state.tmp[0],p2:state.tmp[1]}); state.tmp=[]; show('低圧線')}else show('終点をタップ')}
+    else if(state.tool==='hikikomi'){state.tmp.push(ll); if(state.tmp.length===2){const d=map.distance(state.tmp[0],state.tmp[1]).toFixed(1); add('hikikomi',{p1:state.tmp[0],p2:state.tmp[1],dist:d}); state.tmp=[]; show(`引込 ${d}m`)}else show('終点をタップ')}
+    else if(state.tool==='bunki'){state.tmp.push(ll); if(state.tmp.length===2){add('bunki',{p1:state.tmp[0],p2:state.tmp[1]}); state.tmp=[]; show('分岐')}else show('終点をタップ')}
+    else if(state.tool==='bld'){state.tmp.push(ll); if(state.tmp.length===2){const a=state.tmp[0],b=state.tmp[1]; add('bld',{ps:[{lat:a.lat,lng:a.lng},{lat:a.lat,lng:b.lng},{lat:b.lat,lng:b.lng},{lat:b.lat,lng:a.lng}]}); state.tmp=[]; show('建物')}else show('対角をタップ')}
+    else if(state.tool==='bldf'){state.tmp.push(ll); show(`${state.tmp.length}点目 - ダブルタップで確定`); if(state.tmp.length>=3){const lastTap=state.lastTap||0; if(now-lastTap<400){add('bldf',{ps:state.tmp.map(p=>({lat:p.lat,lng:p.lng}))}); state.tmp=[]; show('自由形'); state.lastTap=0; return} state.lastTap=now}}
+    else if(state.tool==='text'){const t=await ask('文字を入力',''); if(!t)return; add('text',{lat:ll.lat,lng:ll.lng,text:t.trim()}); show('文字配置')}
   });
-
-  $('save').onclick=save;
-  $('load').onclick=load;
-  $('clear').onclick=function(){
-    state.objs=[];
-    clearAll();
-    save();
-  };
-
+  
+  // ツール選択
+  document.querySelectorAll('#tools button').forEach(b=>{
+    b.addEventListener('click',()=>{state.tool=b.dataset.t; state.tmp=[]; document.querySelectorAll('#tools button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); const names={pole:'電柱',trans:'トランス',line:'低圧線',hikikomi:'引込線',bunki:'分岐',bld:'建物',bldf:'自由形',text:'文字'}; show(names[state.tool]+' - 地図をタップ'); vib(5)}, {passive:true});
+  });
+  
+  // GPS - iOS/Android対応強化
+  $('gps').addEventListener('click', async ()=>{
+    const btn=$('gps'); btn.disabled=true; const old=btn.textContent; btn.textContent='取得中...';
+    if(!navigator.geolocation){alert('この端末はGPS非対応です'); btn.disabled=false; btn.textContent=old; return}
+    if(location.protocol!=='https:' && location.hostname!=='localhost'){show('HTTPSで開いてください');}
+    try{
+      const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:15000,maximumAge:0}));
+      const {latitude:lat,longitude:lng}=pos.coords;
+      map.setView([lat,lng],19);
+      // 逆ジオ
+      try{
+        const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=ja`);
+        const d=await r.json();
+        if(d?.address){const a=[d.address.state,d.address.city||d.address.town||d.address.village,d.address.suburb,d.address.road,d.address.house_number].filter(Boolean).join(' '); $('jusho').value=a.replace(/日本/g,'').trim().replace(/\s+/g,' ')}
+      }catch(e){}
+      show('現在地に移動'); vib([10,30,10]);
+    }catch(err){
+      let msg='GPS取得失敗';
+      if(err.code===1)msg='位置情報を許可してください
+設定 > Safari > 位置情報';
+      else if(err.code===2)msg='位置が取得できませんでした';
+      else if(err.code===3)msg='タイムアウトしました';
+      alert(msg);
+    }finally{btn.disabled=false; btn.textContent=old}
+  }, {passive:true});
+  
+  function save(){try{const d={v:34,f:{genba:$('genba').value,jusho:$('jusho').value,koji:getR('k'),kyokyu:getR('s'),keiyaku:getR('c'),amp:$('amp').value,dv:$('dv').value,sz:$('sz').value,mbox:getR('m'),hk:['h1','h2','h3'].filter(id=>$(id).checked),eq:['e1','e2','e3'].filter(id=>$(id).checked),juten:$('juten').value,kensa:$('kensa').value,biko:$('biko').value},o:state.objs.map(o=>({t:o.t,d:o.d})),c:map.getCenter(),z:map.getZoom()}; localStorage.setItem('dq34',JSON.stringify(d)); return true}catch(e){return false}}
+  function load(){try{const s=localStorage.getItem('dq34')||localStorage.getItem('dq33'); if(!s)return false; const d=JSON.parse(s),f=d.f||{}; $('genba').value=f.genba||''; $('jusho').value=f.jusho||''; setR('k',f.koji||'本設'); setR('s',f.kyokyu||'単相3線式 100V/200V'); setR('c',f.keiyaku||''); $('amp').value=f.amp||''; $('dv').value=f.dv||'DV3線'; $('sz').value=f.sz||'3.2mm'; setR('m',f.mbox||'ベージュ'); ['h1','h2','h3'].forEach(id=>$(id).checked=(f.hk||[]).includes(id)); ['e1','e2','e3'].forEach(id=>$(id).checked=(f.eq||[]).includes(id)); $('juten').value=f.juten||''; $('kensa').value=f.kensa||''; $('biko').value=f.biko||''; if(d.c&&d.z)map.setView([d.c.lat,d.c.lng],d.z); clearAll(); state.objs=[]; state.undo=[]; (d.o||[]).forEach(o=>add(o.t,o.d)); return true}catch(e){console.error(e);return false}}
+  
+  $('save').onclick=()=>{if(save()){show('保存しました'); vib(20)}};
+  $('load').onclick=()=>{if(load()){show('読込完了'); vib(20)}else alert('データなし')};
+  $('undo').onclick=()=>{if(state.undo.length===0){show('戻せません');return} const last=state.undo.pop(); state.objs=state.objs.filter(o=>o!==last); if(last._m)map.removeLayer(last._m); if(last._l)map.removeLayer(last._l); state.tmp=[]; save(); show('1つ戻した'); vib(10)};
+  $('clear').onclick=()=>{if(confirm('全て削除しますか？')){clearAll(); state.undo=[]; save(); show('全削除'); vib([10,20,10])}};
+  $('share').onclick=async()=>{const g=$('genba').value||'現場'; const j=$('jusho').value||''; const c=map.getCenter(); const url=`https://maps.google.com/?q=${c.lat},${c.lng}`; const t=`【電力申請】${g}
+${j}
+${url}`; if(navigator.share){try{await navigator.share({title:'電力申請',text:t})}catch(e){}}else{await navigator.clipboard.writeText(t).catch(()=>{}); alert('コピーしました')} vib(10)};
+  
+  const sb=$('sb'), tg=$('tg'), fab=$('fab');
+  tg.onclick=()=>{const h=!sb.classList.contains('hide'); sb.classList.toggle('hide',h); tg.textContent=h?'▲':'▼'; localStorage.setItem('sb',h?'1':'0')};
+  fab.onclick=()=>{sb.classList.remove('hide'); tg.textContent='▼'};
+  if(localStorage.getItem('sb')==='1'&&innerWidth<769){sb.classList.add('hide'); tg.textContent='▲'}
+  
+  // 自動保存
+  let tmr; document.querySelectorAll('input,select,textarea').forEach(e=>e.addEventListener('input',()=>{clearTimeout(tmr); tmr=setTimeout(save,800)}));
+  setInterval(save,20000);
+  
+  // 初回
+  window.addEventListener('load',()=>{setTimeout(()=>{if(localStorage.getItem('dq34')||localStorage.getItem('dq33')){if(confirm('前回の現場データを復元しますか？'))load()}else{show('ツールを選んでタップ開始')}},600)});
+  
+  // iOSスクロール防止
+  document.addEventListener('touchmove',e=>{if(e.target.closest('#map'))e.preventDefault()}, {passive:false});
 }();
 </script>
-
 </body>
 </html>
