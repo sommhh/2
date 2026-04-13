@@ -1,6 +1,196 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>位置図Pro 安定完成版</title>
@@ -14,6 +204,7 @@ body{
   margin:0;
   font-family:Meiryo,sans-serif;
   padding-bottom:env(safe-area-inset-bottom);
+  background:#fff;
 }
 
 header{
@@ -23,16 +214,22 @@ header{
   display:flex;
   gap:5px;
   flex-wrap:wrap;
+  align-items:center;
 }
 
 button{
-  padding:8px;
+  padding:8px 10px;
   border-radius:6px;
   border:0;
   background:#e2e8f0;
+  font-size:13px;
+  cursor:pointer;
+  touch-action:manipulation;
 }
 
+button:active{opacity:0.7}
 .primary{background:#2563eb;color:#fff}
+button.active{background:#2563eb;color:#fff;outline:2px solid #fff}
 
 #app{
   display:flex;
@@ -45,16 +242,31 @@ aside{
   border-right:1px solid #ccc;
   padding:10px;
   overflow:auto;
+  font-size:13px;
+}
+
+aside label{
+  display:block;
+  margin-top:8px;
+  font-weight:bold;
+  font-size:12px;
 }
 
 aside input,aside select,aside textarea{
   width:100%;
   padding:6px;
   margin-top:3px;
+  border:1px solid #999;
+  border-radius:4px;
+  font-size:13px;
+  box-sizing:border-box;
 }
+
+aside textarea{resize:vertical}
 
 #map{
   flex:1;
+  position:relative;
 }
 
 .toolbar{
@@ -65,6 +277,16 @@ aside input,aside select,aside textarea{
   padding:5px;
   z-index:1000;
   border-radius:6px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.3);
+  display:flex;
+  gap:4px;
+  flex-wrap:wrap;
+  max-width:calc(100% - 70px);
+}
+
+.toolbar button{
+  padding:6px 9px;
+  font-size:12px;
 }
 
 .compass{
@@ -78,6 +300,28 @@ aside input,aside select,aside textarea{
   display:flex;
   align-items:center;
   justify-content:center;
+  z-index:1000;
+  box-shadow:0 2px 6px rgba(0,0,0,0.3);
+  font-size:20px;
+  font-weight:bold;
+  transition:transform 0.2s;
+}
+
+.status{
+  position:absolute;
+  bottom:0;
+  left:0;
+  right:0;
+  background:rgba(0,0,0,0.75);
+  color:#fff;
+  font-size:11px;
+  padding:4px 8px;
+  z-index:1000;
+}
+
+@media(max-width:800px){
+  #app{flex-direction:column}
+  aside{width:100%;height:38vh;border-right:none;border-bottom:1px solid #ccc}
 }
 </style>
 </head>
@@ -99,19 +343,33 @@ aside input,aside select,aside textarea{
 <div id="app">
 
 <aside>
-<input id="genba" placeholder="現場名">
-<input id="jusho" placeholder="住所">
+<label>現場名<input id="genba" placeholder="○○様邸"></label>
+<label>住所<input id="jusho" placeholder="宮城県名取市..."></label>
+<label>工事種別<select id="koji"><option>本設</option><option>仮設</option></select></label>
+<label>二類/三類<select id="ruis"><option>二類</option><option>三類</option></select></label>
+<label>供給区分<select id="kyokyu"><option>単相2線式 100V</option><option selected>単相3線式 100/200V</option><option>三相3線式 200V</option></select></label>
+<label>DV線種<select id="dv"><option>DV2線</option><option>DV3線</option></select></label>
+<label>太さ<select id="futo"><option>3.2mm</option><option>22mm²</option><option>38mm²</option><option>60mm²</option><option>100mm²</option><option>その他</option></select></label>
+<label>受点完成日<input id="juten" type="date"></label>
+<label>検査希望日<input id="kensa" type="date"></label>
+<label>メーター<input type="radio" name="mbox" value="ベージュ" checked> ベージュ <input type="radio" name="mbox" value="グレー"> グレー</label>
+<label>備考<textarea id="biko" rows="2" placeholder="スッキリポール等"></textarea></label>
+<label>住所検索<input id="addr" placeholder="住所で検索"><button id="search" style="width:100%;margin-top:4px;background:#2563eb;color:#fff">検索</button></label>
 </aside>
 
 <div id="map">
 <div class="toolbar">
-<button data-m="pole">電柱</button>
+<button data-m="pole" class="active">電柱</button>
 <button data-m="trans">Tr</button>
 <button data-m="house">🏠</button>
 <button data-m="lv">低圧</button>
+<button data-m="svc">引込</button>
+<button data-m="br">分岐</button>
+<button data-m="rect">囲み</button>
 <button data-m="dist">距離</button>
 </div>
 <div class="compass" id="comp">↑</div>
+<div class="status" id="status">電柱モード - タップで配置</div>
 </div>
 
 </div>
@@ -120,127 +378,199 @@ aside input,aside select,aside textarea{
 const $=id=>document.getElementById(id);
 
 // マップ
-const map=L.map('map',{doubleClickZoom:false}).setView([38.17,140.86],17);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+const map=L.map('map',{doubleClickZoom:false, zoomControl:true}).setView([38.171,140.867],17);
+const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:20, attribution:'©OSM'}).addTo(map);
+const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20});
+L.control.layers({'地図':osm,'航空':sat},{},{position:'bottomright'}).addTo(map);
 
 const drawn=L.featureGroup().addTo(map);
 
-let mode='pole',hist=[],cur=null,d1=null;
+let mode='pole',hist=[],cur=null,d1=null,r1=null,b1=null;
 
-// モード
-document.querySelectorAll('[data-m]').forEach(b=>{
- b.onclick=()=>mode=b.dataset.m;
-});
+// モード切替
+function setMode(m){
+  mode=m;
+  document.querySelectorAll('[data-m]').forEach(b=>b.classList.toggle('active',b.dataset.m===m));
+  const names={pole:'電柱',trans:'トランス',house:'家',lv:'低圧線',svc:'引込線',br:'空中分岐',rect:'囲み',dist:'距離測定'};
+  $('status').textContent=names[m]+'モード'+(m==='pole'||m==='trans'?' - タップで配置':'');
+  cur=null; d1=null; r1=null; b1=null;
+}
+document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
 
 // アイコン
-const icon=(txt,color)=>L.divIcon({
+const icon=(txt,color,border='#000')=>L.divIcon({
  html:`<div style="text-align:center">
- <div style="width:16px;height:16px;border-radius:50%;background:${color}"></div>
- <div style="font-size:10px">${txt}</div></div>`
+ <div style="width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid ${border};margin:0 auto"></div>
+ <div style="font-size:11px;background:#fff;border:1px solid #000;padding:0 3px;border-radius:3px;margin-top:1px;white-space:nowrap">${txt}</div></div>`,
+ iconSize:[40,32], iconAnchor:[20,16], className:''
+});
+
+const houseIcon=()=>L.divIcon({
+ html:`<div style="text-align:center;font-size:24px">🏠</div>`,
+ iconSize:[30,30], iconAnchor:[15,15], className:''
 });
 
 // 描画
 map.on('click',e=>{
  if(mode==='pole'||mode==='trans'){
-  const n=prompt('番号'); if(!n)return;
-  const m=L.marker(e.latlng,{icon:icon(n,mode==='trans'?'red':'black'),draggable:true}).addTo(drawn);
+  const n=prompt('電柱番号を入力'); if(!n)return;
+  const m=L.marker(e.latlng,{icon:icon(n,'#fff',mode==='trans'?'#e60012':'#000'),draggable:true}).addTo(drawn);
   m.k='p'; m.n=n; m.t=(mode==='trans');
+  m.on('dblclick',()=>{const nn=prompt('番号修正',m.n); if(nn){m.n=nn; m.setIcon(icon(nn,'#fff',m.t?'#e60012':'#000'))}});
   hist.push(m);
  }
  else if(mode==='house'){
-  const m=L.marker(e.latlng,{icon:icon('家','green')}).addTo(drawn);
+  const m=L.marker(e.latlng,{icon:houseIcon(),draggable:true}).addTo(drawn);
   m.k='h'; hist.push(m);
  }
  else if(mode==='lv'){
   if(!cur){
-   cur=L.polyline([e.latlng],{color:'#000'}).addTo(drawn);
+   cur=L.polyline([e.latlng],{color:'#000',weight:4}).addTo(drawn);
    cur.k='lv'; hist.push(cur);
   } else cur.addLatLng(e.latlng);
+ }
+ else if(mode==='svc'){
+  if(!d1){d1=e.latlng; $('status').textContent='引込線 - 終点をタップ';}
+  else{
+   const l=L.polyline([d1,e.latlng],{color:'#e60012',weight:4}).addTo(drawn);
+   l.k='svc'; const dist=Math.round(map.distance(d1,e.latlng)*10)/10;
+   l.bindTooltip(dist+'m',{permanent:true, direction:'center'}); hist.push(l); d1=null; setMode('svc');
+  }
+ }
+ else if(mode==='br'){
+  if(!b1){b1=e.latlng; $('status').textContent='分岐 - 終点をタップ';}
+  else{
+   const l=L.polyline([b1,e.latlng],{color:'#e60012',weight:3,dashArray:'6,4'}).addTo(drawn);
+   l.k='br'; hist.push(l); b1=null; setMode('br');
+  }
+ }
+ else if(mode==='rect'){
+  if(!r1){r1=e.latlng; $('status').textContent='囲み - 対角をタップ';}
+  else{
+   const r=L.rectangle([r1,e.latlng],{color:'#e60012',weight:3,fillColor:'#e60012',fillOpacity:0.1,dashArray:'8,4'}).addTo(drawn);
+   r.k='r'; hist.push(r);
+   const center=r.getBounds().getCenter();
+   const label=L.marker(center,{icon:L.divIcon({html:'<div style="background:#fff;border:1px solid red;padding:2px 5px;font-size:12px">建物</div>',className:''})}).addTo(drawn);
+   hist.push(label);
+   r1=null; setMode('rect');
+  }
  }
  else if(mode==='dist'){
   if(!d1)d1=e.latlng;
   else{
    const d=map.distance(d1,e.latlng);
-   L.polyline([d1,e.latlng],{color:'red'}).addTo(drawn);
-   alert("距離:"+Math.round(d)+"m");
+   const l=L.polyline([d1,e.latlng],{color:'#ff00ff',weight:3,dashArray:'4,4'}).addTo(drawn);
+   l.bindTooltip(Math.round(d)+'m',{permanent:true}); hist.push(l);
    d1=null;
   }
  }
 });
 
-map.on('dblclick',()=>cur=null);
+map.on('dblclick',()=>{if(mode==='lv'){cur=null}});
 
-// GPS
+// GPS - 住所自動入力付き
 $('gps').onclick=()=>{
+ if(!navigator.geolocation){alert('GPS非対応');return}
+ $('status').textContent='GPS取得中...';
  navigator.geolocation.getCurrentPosition(p=>{
-  map.setView([p.coords.latitude,p.coords.longitude],19);
- },e=>alert("GPS失敗:"+e.message));
+  const la=p.coords.latitude, lo=p.coords.longitude;
+  map.setView([la,lo],19);
+  L.circleMarker([la,lo],{radius:8,color:'#2563eb',fillColor:'#2563eb',fillOpacity:0.8}).addTo(drawn).bindPopup('現在地').openPopup();
+  // 逆ジオコーディング
+  fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${la}&lon=${lo}&accept-language=ja`)
+   .then(r=>r.json()).then(d=>{$('jusho').value=d.display_name||''; $('status').textContent='住所を自動入力しました';})
+   .catch(()=>{$('status').textContent='現在地に移動しました'});
+ },e=>alert("GPS失敗:"+e.message),{enableHighAccuracy:true,timeout:10000});
+};
+
+// 住所検索
+$('search').onclick=()=>{
+ const q=$('addr').value.trim(); if(!q)return;
+ fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(q)+'&countrycodes=jp&limit=1')
+  .then(r=>r.json()).then(d=>{if(d[0]){map.setView([d[0].lat,d[0].lon],18);$('jusho').value=q;$('status').textContent='移動しました'}else alert('見つかりません')});
 };
 
 // 保存
 $('save').onclick=()=>{
  const data={
-  genba:$('genba').value,
-  jusho:$('jusho').value,
+  genba:$('genba').value, jusho:$('jusho').value, koji:$('koji').value, ruis:$('ruis').value,
+  kyokyu:$('kyokyu').value, dv:$('dv').value, futo:$('futo').value, juten:$('juten').value,
+  kensa:$('kensa').value, mbox:document.querySelector('[name=mbox]:checked').value, biko:$('biko').value,
+  center:map.getCenter(), zoom:map.getZoom(),
   layers:hist.map(l=>{
    if(l.k==='p')return{t:'p',lat:l.getLatLng().lat,lon:l.getLatLng().lng,n:l.n,tr:l.t};
    if(l.k==='h')return{t:'h',lat:l.getLatLng().lat,lon:l.getLatLng().lng};
-   if(l.k==='lv')return{t:'lv',pts:l.getLatLngs().map(p=>[p.lat,p.lng])};
+   if(l.k==='lv'||l.k==='svc'||l.k==='br')return{t:l.k,pts:l.getLatLngs().map(p=>[p.lat,p.lng])};
+   if(l.k==='r'){const b=l.getBounds();return{t:'r',b:[[b.getSouth(),b.getWest()],[b.getNorth(),b.getEast()]]}}
   }).filter(Boolean)
  };
+ if(!data.genba){alert('現場名を入力');return}
  localStorage.setItem("MAP_"+data.genba,JSON.stringify(data));
- alert("保存OK");
+ $('status').textContent='保存しました';
+ setTimeout(()=>setMode(mode),2000);
 };
 
 // 読込
 $('load').onclick=()=>{
- const k=prompt("現場名");
+ const k=prompt("現場名を入力"); if(!k)return;
  const d=JSON.parse(localStorage.getItem("MAP_"+k)||'null');
- if(!d)return alert("なし");
+ if(!d)return alert("データなし");
 
- drawn.clearLayers(); hist=[];
+ drawn.clearLayers(); hist=[]; cur=null;
+ $('genba').value=d.genba||''; $('jusho').value=d.jusho||''; $('koji').value=d.koji||'本設';
+ $('ruis').value=d.ruis||'二類'; $('kyokyu').value=d.kyokyu||'単相3線式 100/200V';
+ $('dv').value=d.dv||'DV2線'; $('futo').value=d.futo||'3.2mm'; $('juten').value=d.juten||'';
+ $('kensa').value=d.kensa||''; $('biko').value=d.biko||'';
+ if(d.mbox)document.querySelector(`[name=mbox][value="${d.mbox}"]`).checked=true;
 
  d.layers.forEach(o=>{
   if(o.t==='p'){
-   const m=L.marker([o.lat,o.lon],{icon:icon(o.n,o.tr?'red':'black')}).addTo(drawn);
-   m.k='p'; hist.push(m);
+   const m=L.marker([o.lat,o.lon],{icon:icon(o.n,'#fff',o.tr?'#e60012':'#000'),draggable:true}).addTo(drawn);
+   m.k='p'; m.n=o.n; m.t=o.tr; m.on('dblclick',()=>{const nn=prompt('番号修正',m.n); if(nn){m.n=nn; m.setIcon(icon(nn,'#fff',m.t?'#e60012':'#000'))}}); hist.push(m);
   }
-  if(o.t==='h'){
-   const m=L.marker([o.lat,o.lon],{icon:icon('家','green')}).addTo(drawn);
-   m.k='h'; hist.push(m);
+  if(o.t==='h'){const m=L.marker([o.lat,o.lon],{icon:houseIcon(),draggable:true}).addTo(drawn); m.k='h'; hist.push(m)}
+  if(o.t==='lv'||o.t==='svc'||o.t==='br'){
+   const opt={color:o.t==='lv'?'#000':'#e60012',weight:o.t==='br'?3:4}; if(o.t==='br')opt.dashArray='6,4';
+   const l=L.polyline(o.pts,opt).addTo(drawn); l.k=o.t; hist.push(l);
   }
-  if(o.t==='lv'){
-   const l=L.polyline(o.pts).addTo(drawn);
-   l.k='lv'; hist.push(l);
+  if(o.t==='r'){
+   const r=L.rectangle(o.b,{color:'#e60012',weight:3,fillColor:'#e60012',fillOpacity:0.1,dashArray:'8,4'}).addTo(drawn);
+   r.k='r'; hist.push(r);
   }
  });
+ if(d.center) map.setView(d.center, d.zoom||17);
+ $('status').textContent='読込完了';
 };
 
 // 一覧
 $('list').onclick=()=>{
- alert(Object.keys(localStorage).filter(k=>k.startsWith("MAP_")).join("\n"));
+ const keys=Object.keys(localStorage).filter(k=>k.startsWith("MAP_")).map(k=>k.slice(4));
+ alert(keys.length?keys.join("
+"):"保存データなし");
 };
 
 // undo
 $('undo').onclick=()=>{
  const l=hist.pop();
- if(l)drawn.removeLayer(l);
+ if(l){drawn.removeLayer(l); if(l===cur)cur=null; $('status').textContent='1つ戻しました'}
 };
 
 // clear
 $('clear').onclick=()=>{
- if(confirm("全削除？")){
-  drawn.clearLayers(); hist=[];
+ if(confirm("全て削除しますか？")){
+  drawn.clearLayers(); hist=[]; cur=null; $('status').textContent='全消去しました';
  }
 };
 
 // スクショ
 $('shot').onclick=()=>{
- html2canvas(document.body).then(c=>{
+ $('status').textContent='画像生成中...';
+ html2canvas($('map'),{useCORS:true,scale:2}).then(c=>{
   const a=document.createElement("a");
   a.href=c.toDataURL();
-  a.download="map.png";
+  a.download=($('genba').value||'map')+".png";
   a.click();
+  $('status').textContent='PNG保存しました';
  });
 };
 
@@ -250,21 +580,27 @@ $('print').onclick=()=>window.print();
 // LINE
 $('line').onclick=()=>{
  const c=map.getCenter();
- const txt=`${$('genba').value}
-${$('jusho').value}
-https://maps.google.com/?q=${c.lat},${c.lng}`;
+ const poles=hist.filter(l=>l.k==='p').map(l=>l.n+(l.t?'(Tr)':''));
+ const txt=`【${$('genba').value||'現場'}】
+住所:${$('jusho').value}
+工事:${$('koji').value}/${$('kyokyu').value}/${$('ruis').value}
+DV:${$('dv').value} ${$('futo').value}
+メーター:${document.querySelector('[name=mbox]:checked').value}
+完成:${$('juten').value} 検査:${$('kensa').value}
+位置:https://maps.google.com/?q=${c.lat.toFixed(6)},${c.lng.toFixed(6)}
+電柱:${poles.join('、')}
+備考:${$('biko').value}`;
  location.href='https://line.me/R/msg/text/?'+encodeURIComponent(txt);
 };
 
-// ★最重要：高さ補正
+// 高さ補正
 function fixHeight(){
- document.getElementById('app').style.height=window.innerHeight+"px";
- setTimeout(()=>map.invalidateSize(),300);
+ document.getElementById('app').style.height=window.innerHeight-42+"px";
+ setTimeout(()=>map.invalidateSize(),200);
 }
-
 window.addEventListener('load',fixHeight);
 window.addEventListener('resize',fixHeight);
-window.addEventListener('orientationchange',fixHeight);
+window.addEventListener('orientationchange',()=>setTimeout(fixHeight,300));
 
 // コンパス
 window.addEventListener("deviceorientation",e=>{
@@ -272,6 +608,8 @@ window.addEventListener("deviceorientation",e=>{
   $('comp').style.transform=`rotate(${e.alpha}deg)`;
  }
 });
+
+setMode('pole');
 </script>
 
 </body>
