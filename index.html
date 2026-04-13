@@ -191,250 +191,491 @@
   }
 })();</script>
 <script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>電力申請用 位置図Pro v5</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>電力申請用 位置図Pro v8</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic UI",Meiryo,sans-serif;background:#fff;color:#111}
-body{display:flex;flex-direction:column;overscroll-behavior:none}
-header{background:#111827;color:#fff;padding:8px 8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;z-index:2000}
-header button{background:#374151;color:#fff;border:none;padding:10px 12px;border-radius:10px;font-size:14px;min-height:44px;min-width:44px;touch-action:manipulation}
-header button:active{background:#4b5563}
-#togglePanel{background:#1f2937;font-weight:bold}
-main{flex:1;display:flex;min-height:0;position:relative}
-#panel{width:320px;background:#f9fafb;border-right:1px solid #e5e7eb;overflow:auto;padding:14px;transition:transform .25s ease;z-index:1500}
-#panel.collapsed{transform:translateX(-102%)}
-.form-group{margin-bottom:14px}
-label{display:block;font-size:13px;font-weight:600;margin-bottom:5px;color:#374151}
-input,select,textarea{width:100%;padding:11px;border:1px solid #d1d5db;border-radius:8px;font-size:15px;background:#fff}
-input:focus,select:focus,textarea:focus{outline:2px solid #2563eb33;border-color:#2563eb}
-textarea{min-height:70px;resize:vertical}
-.radio-group{display:flex;gap:14px;flex-wrap:wrap}
-.radio-group label{display:flex;align-items:center;gap:6px;font-weight:500}
-#mapWrap{flex:1;position:relative;background:#ddd}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",sans-serif;touch-action:manipulation}
+body{display:flex;flex-direction:column;background:#f3f4f6;color:#111827;overscroll-behavior:none}
+header{height:54px;background:#111827;color:#fff;display:flex;align-items:center;padding:0 10px;gap:6px;flex-shrink:0;z-index:2000}
+header h1{font-size:15px;margin:0 8px 0 0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+header button{background:#374151;color:#fff;border:none;padding:7px 10px;border-radius:8px;font-size:13px;white-space:nowrap}
+header button:active{opacity:0.8}
+.app{flex:1;display:flex;min-height:0}
+aside{width:350px;background:#fff;border-right:1px solid #e5e7eb;padding:12px;overflow:auto;flex-shrink:0}
+main{flex:1;display:flex;flex-direction:column;min-width:0;background:#e5e7eb}
+label{font-size:12px;color:#4b5563;margin-top:10px;display:block;margin-bottom:4px}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;background:#fff}
+textarea{resize:vertical;min-height:60px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.searchbox{display:flex;gap:6px;margin-top:4px}
+.searchbox button{padding:9px 12px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:14px;white-space:nowrap}
+#toolbar{background:#ffffff;border-bottom:1px solid #e5e7eb;padding:8px;display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;flex-shrink:0;-webkit-overflow-scrolling:touch}
+#toolbar::-webkit-scrollbar{display:none}
+#toolbar button{padding:10px 14px;border:1.5px solid #d1d5db;background:#fff;border-radius:10px;font-size:14px;white-space:nowrap;flex-shrink:0;font-weight:500}
+#toolbar button.active{background:#2563eb;color:#fff;border-color:#2563eb}
+#map-wrap{flex:1;position:relative}
 #map{position:absolute;inset:0}
-.toolbar{position:absolute;top:10px;left:10px;z-index:900;display:flex;flex-direction:column;gap:7px;background:rgba(255,255,255,.97);padding:8px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.18);backdrop-filter:blur(4px)}
-.toolbar button{padding:10px 12px;border:1px solid #d1d5db;background:#fff;border-radius:9px;font-size:14px;min-height:44px;min-width:92px;text-align:center;touch-action:manipulation}
-.toolbar button.active{background:#2563eb;color:#fff;border-color:#2563eb;font-weight:600}
-.compass{position:absolute;top:10px;right:10px;z-index:900;width:72px;height:72px;background:rgba(255,255,255,.97);border-radius:50%;box-shadow:0 4px 14px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center}
-.compass-inner{position:relative;width:58px;height:58px;font-size:12px;color:#374151}
-.compass-n{position:absolute;top:0;left:50%;transform:translateX(-50%);font-weight:700;color:#dc2626}
-.compass-s{position:absolute;bottom:0;left:50%;transform:translateX(-50%)}
-.compass-e{position:absolute;right:0;top:50%;transform:translateY(-50%)}
-.compass-w{position:absolute;left:0;top:50%;transform:translateY(-50%)}
-.compass-arrow{position:absolute;top:50%;left:50%;width:2px;height:26px;background:#dc2626;transform:translate(-50%,-100%);transform-origin:bottom}
-.compass-arrow::after{content:'';position:absolute;top:-7px;left:-5px;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:9px solid #dc2626}
-.statusbar{position:absolute;bottom:0;left:0;right:0;background:rgba(17,24,39,.92);color:#e5e7eb;font-size:12px;padding:6px 10px;display:flex;justify-content:space-between;gap:10px;z-index:900;backdrop-filter:blur(2px)}
-.pole-icon .circle{width:26px;height:26px;background:#fff;border:2.5px solid #111; border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,.3)}
-.pole-icon.trans .circle{border-color:#ea580c;border-width:3px}
-.pole-icon .label{margin-top:2px;text-align:center;font-size:11px;background:#fff;padding:1px 4px;border-radius:4px;white-space:nowrap;border:1px solid #6b7280;line-height:1.2;font-weight:600;color:#111;transform:translateX(-25%)}
-.pole-icon.trans .label{border-color:#ea580c;color:#ea580c}
-.text-label{background:rgba(255,255,255,.95);padding:5px 8px;border:2px solid #e60012;border-radius:6px;font-size:14px;color:#e60012;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.2)}
-.leaflet-container{font-family:inherit}
-@media(max-width:820px){
- #panel{position:absolute;left:0;top:0;bottom:0;height:100%;box-shadow:2px 0 20px rgba(0,0,0,.25)}
- header{padding:6px}
- header button{font-size:13px;padding:9px 10px}
- .toolbar{top:8px;left:8px;padding:6px;gap:6px}
- .toolbar button{min-width:80px;font-size:13px;padding:9px 10px}
+footer{height:30px;background:#111827;color:#9ca3af;font-size:12px;display:flex;align-items:center;padding:0 10px;gap:14px;flex-shrink:0}
+#coords{font-variant-numeric:tabular-nums}
+.leaflet-control-layers{font-size:13px}
+.compass{width:38px;height:38px;background:rgba(17,24,39,0.85);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);font-size:16px}
+.pole-icon, .hh-icon{background:transparent;border:none}
+.pole-wrap{display:flex;flex-direction:column;align-items:center;pointer-events:none}
+.pole-circle{width:26px;height:26px;border-radius:50%;background:#fff;border:3px solid #000;box-shadow:0 1px 3px rgba(0,0,0,0.3)}
+.hh-icon .pole-circle{border-color:#ea580c}
+.pole-label{margin-top:3px;background:rgba(255,255,255,0.95);padding:1px 5px;border-radius:4px;font-size:12px;color:#000;font-weight:700;line-height:1.2;white-space:nowrap;border:1px solid rgba(0,0,0,0.2);pointer-events:none}
+.map-text{background:rgba(255,255,255,0.95);padding:3px 7px;border:1.5px solid #374151;border-radius:6px;font-size:14px;white-space:nowrap;color:#111827;font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+.dist-label div{background:#fff;padding:2px 6px;border:1.5px solid #dc2626;color:#dc2626;font-size:12px;font-weight:700;border-radius:4px;white-space:nowrap}
+.leaflet-marker-icon.leaflet-div-icon{background:transparent;border:none}
+.crosshair{cursor:crosshair !important}
+@media (max-width:900px){
+  .app{flex-direction:column}
+  aside{width:100%;height:auto;max-height:42vh;border-right:none;border-bottom:1px solid #e5e7eb}
+  header{height:auto;padding:8px;flex-wrap:wrap}
+  header h1{width:100%;margin-bottom:6px;font-size:14px}
+  #toolbar{padding:6px}
+  #toolbar button{padding:9px 12px;font-size:13px}
 }
 </style>
 </head>
 <body>
 <header>
-<button id="togglePanel" title="メニューを開閉">☰</button>
-<button onclick="doGPS()">📍GPS現在地</button>
-<button onclick="shareLINE()">💬LINE共有</button>
-<button onclick="saveData()">💾保存</button>
-<button onclick="loadData()">📂読込</button>
-<button onclick="undo()">↶戻る</button>
-<button onclick="clearAll()">🗑全消し</button>
-<button onclick="exportPNG()">🖼PNG出力</button>
+  <h1>電力申請用 位置図Pro v8</h1>
+  <button id="btnGps">GPS現在地</button>
+  <button id="btnLine">LINE共有</button>
+  <button id="btnSave">保存</button>
+  <button id="btnLoad">読込</button>
+  <button id="btnUndo">戻る</button>
+  <button id="btnClear">全消し</button>
+  <button id="btnPng">PNG出力</button>
 </header>
-<main>
-<aside id="panel">
-<div class="form-group"><label for="genba">現場名</label><input id="genba" type="text" placeholder="例：〇〇市〇〇 1-2-3"></div>
-<div class="form-group"><label for="koji">工事種別</label><select id="koji"><option>本設</option><option>仮設</option></select></div>
-<div class="form-group"><label for="kyuden">供給区分</label><select id="kyuden"><option>単相2線</option><option selected>単相3線</option><option>三相3線</option></select></div>
-<div class="form-group"><label for="rui">二類/三類</label><select id="rui"><option>二類</option><option>三類</option></select></div>
-<div class="form-group"><label for="kansei">受点完成日</label><input id="kansei" type="date"></div>
-<div class="form-group"><label for="kensa">検査希望日</label><input id="kensa" type="date"></div>
-<div class="form-group"><label>メーターBOX色</label><div class="radio-group"><label><input type="radio" name="meter" value="ベージュ" checked>ベージュ</label><label><input type="radio" name="meter" value="グレー">グレー</label><label><input type="radio" name="meter" value="黒">黒</label></div></div>
-<div class="form-group"><label for="biko">備考</label><textarea id="biko" placeholder="近傍の目標物など"></textarea></div>
-<div class="form-group"><label for="address">住所検索</label><div style="display:flex;gap:6px"><input id="address" type="text" placeholder="住所を入力"><button onclick="searchAddress()" style="padding:11px 14px;background:#2563eb;color:#fff;border:none;border-radius:8px;min-height:44px;min-width:70px">検索</button></div></div>
-</aside>
-<div id="mapWrap">
-<div id="map"></div>
-<div class="toolbar">
-<button data-tool="pole" onclick="setTool('pole')">電柱○</button>
-<button data-tool="trans" onclick="setTool('trans')">トランス○</button>
-<button data-tool="line" onclick="setTool('line')">引込線</button>
-<button data-tool="rect" onclick="setTool('rect')">建物囲み</button>
-<button data-tool="text" onclick="setTool('text')">テキスト</button>
-</div>
-<div class="compass"><div class="compass-inner"><div class="compass-n">N</div><div class="compass-e">E</div><div class="compass-s">S</div><div class="compass-w">W</div><div class="compass-arrow"></div></div></div>
-<div class="statusbar"><div id="coords">緯度:--- 経度:---</div><div id="statusMsg">待機中</div></div>
-</div>
-</main>
-<script>
-let map, currentTool=null, allObjects=[], tempLine=null, drawingRectStart=null, gpsMarker=null;
-document.getElementById('togglePanel').onclick=()=>{document.getElementById('panel').classList.toggle('collapsed')};
 
-document.addEventListener('DOMContentLoaded',()=>{
- map=L.map('map',{preferCanvas:true,zoomControl:false,doubleClickZoom:true}).setView([35.681236,139.767125],17);
- L.control.zoom({position:'bottomright'}).addTo(map);
- const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:20,attribution:'© OpenStreetMap',crossOrigin:true});
- const esri=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,attribution:'Tiles © Esri',crossOrigin:true});
- osm.addTo(map);
- L.control.layers({'地図':osm,'航空写真':esri},{},{position:'topright',collapsed:true}).addTo(map);
- map.on('click',onMapClick);
- map.on('dblclick',onMapDblClick);
- map.on('mousemove',e=>{document.getElementById('coords').textContent=`緯度:${e.latlng.lat.toFixed(6)} 経度:${e.latlng.lng.toFixed(6)}`;});
- map.on('moveend',()=>{const c=map.getCenter();document.getElementById('coords').textContent=`中心:${c.lat.toFixed(6)}, ${c.lng.toFixed(6)} Z:${map.getZoom()}`;});
- if(window.innerWidth<820)document.getElementById('panel').classList.add('collapsed');
- updateStatus();
+<div class="app">
+  <aside>
+    <label>現場名</label>
+    <input id="genba" type="text" placeholder="〇邸新築工事">
+    
+    <label>住所</label>
+    <input id="jusho" type="text" placeholder="〇〇市〇〇町1-2-3">
+    
+    <div class="row2">
+      <div>
+        <label>工事種別</label>
+        <select id="koji"><option>本設</option><option>仮設</option></select>
+      </div>
+      <div>
+        <label>二類/三類</label>
+        <select id="kyu"><option>二類</option><option>三類</option></select>
+      </div>
+    </div>
+    
+    <label>供給区分</label>
+    <input id="kyoku" type="text" placeholder="低圧・単相3線など">
+    
+    <div class="row2">
+      <div>
+        <label>外線種類</label>
+        <select id="gaiType"><option>OW</option><option>DV</option><option>CV</option><option>CVT</option><option>その他</option></select>
+      </div>
+      <div>
+        <label>外線太さ</label>
+        <select id="gaiSize"><option>2.0mm</option><option>2.6mm</option><option>3.2mm</option><option>5.0mm</option><option>8mm²</option><option>14mm²</option><option>22mm²</option><option>38mm²</option><option>60mm²</option><option>100mm²</option><option>その他</option></select>
+      </div>
+    </div>
+    
+    <div class="row2">
+      <div>
+        <label>受点完成日</label>
+        <input id="juten" type="date">
+      </div>
+      <div>
+        <label>検査希望日</label>
+        <input id="kensa" type="date">
+      </div>
+    </div>
+    
+    <label>メーターBOX色</label>
+    <select id="boxColor"><option>ベージュ</option><option>グレー</option><option>黒</option></select>
+    
+    <label>備考</label>
+    <textarea id="biko" placeholder="特記事項など"></textarea>
+    
+    <label>住所検索</label>
+    <div class="searchbox">
+      <input id="search" type="text" placeholder="住所や地名">
+      <button id="btnSearch">検索</button>
+    </div>
+  </aside>
+  
+  <main>
+    <div id="toolbar">
+      <button data-mode="pole">電柱◯</button>
+      <button data-mode="hh">ハンドホール◯</button>
+      <button data-mode="lvline">低圧線</button>
+      <button data-mode="svc">引込線</button>
+      <button data-mode="bldg">建物囲み</button>
+      <button data-mode="text">テキスト</button>
+    </div>
+    <div id="map-wrap">
+      <div id="map"></div>
+    </div>
+  </main>
+</div>
+
+<footer>
+  <span id="status">準備完了</span>
+  <span id="coords"></span>
+</footer>
+
+<script>
+const map = L.map('map', {
+  zoomControl: true,
+  doubleClickZoom: false,
+  maxZoom: 20
+}).setView([35.6812, 139.7671], 16);
+
+const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap',
+  crossOrigin: true,
+  maxZoom: 20
+}).addTo(map);
+
+const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  attribution: '© Esri',
+  crossOrigin: true,
+  maxZoom: 20
 });
 
-function setTool(t){
- if(currentTool===t){currentTool=null}else{currentTool=t}
- if(tempLine){map.removeLayer(tempLine);tempLine=null}
- drawingRectStart=null;
- document.querySelectorAll('.toolbar button').forEach(b=>b.classList.toggle('active',b.dataset.tool===currentTool));
- map.getContainer().style.cursor=currentTool?'crosshair':'';
- if(currentTool==='line'){map.doubleClickZoom.disable()}else{map.doubleClickZoom.enable()}
- updateStatus();
-}
-function updateStatus(){
- const names={pole:'電柱○ 追加中 - 地図をタップ',trans:'トランス○ 追加中 - 地図をタップ',line:'引込線 作図中 - タップで追加、ダブルタップで確定',rect:'建物囲み - 対角2点をタップ',text:'テキスト 追加中 - 地図をタップ'};
- document.getElementById('statusMsg').textContent=names[currentTool]||'待機中';
+L.control.layers({"地図": osm, "衛星": sat}, null, {position: 'topright'}).addTo(map);
+
+const Compass = L.Control.extend({
+  onAdd: function() {
+    const d = L.DomUtil.create('div', 'compass');
+    d.title = '北';
+    d.innerHTML = 'N';
+    return d;
+  }
+});
+new Compass({position: 'topright'}).addTo(map);
+
+const drawn = L.featureGroup().addTo(map);
+let history = [];
+let mode = null;
+let temp = { line: null, points: [], start: null };
+
+const statusEl = document.getElementById('status');
+const coordsEl = document.getElementById('coords');
+
+function setStatus(t){ statusEl.textContent = t; }
+function setMode(m){
+  mode = m;
+  document.querySelectorAll('#toolbar button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.mode === m);
+  });
+  map.getContainer().classList.toggle('crosshair', !!m);
+  if(m === 'lvline'){ map.doubleClickZoom.disable(); } else { map.doubleClickZoom.enable(); }
+  temp.line = null; temp.points = []; temp.start = null;
+  const names = {pole:'電柱を配置', hh:'ハンドホールを配置', lvline:'低圧線:クリックで追加、ダブルクリックで完了', svc:'引込線:始点→終点', bldg:'建物:対角2点', text:'テキストを配置'};
+  setStatus(m ? names[m] || '' : '準備完了');
 }
 
-function getPoleIcon(num,isTrans){
- return L.divIcon({className:'pole-icon'+(isTrans?' trans':''),html:`<div class="circle"></div><div class="label">${num||''}</div>`,iconSize:[28,40],iconAnchor:[14,13]});
-}
-function createPoleMarker(latlng,number,isTrans){
- const m=L.marker(latlng,{draggable:true,icon:getPoleIcon(number,isTrans),riseOnHover:true});
- m._type=isTrans?'trans':'pole'; m._number=number;
- m.on('dblclick',e=>{L.DomEvent.stopPropagation(e);const nn=prompt('電柱番号を入力',m._number);if(nn!==null){m._number=nn;m.setIcon(getPoleIcon(nn,isTrans));}});
- m.addTo(map); allObjects.push(m);
-}
-function createTextMarker(latlng,text){
- const icon=L.divIcon({className:'',html:`<div class="text-label">${text}</div>`});
- const m=L.marker(latlng,{draggable:true,icon});
- m._type='text'; m._text=text;
- m.on('dblclick',e=>{L.DomEvent.stopPropagation(e);const nt=prompt('テキストを編集',m._text);if(nt!==null){m._text=nt;m.setIcon(L.divIcon({className:'',html:`<div class="text-label">${nt}</div>`}));}});
- m.addTo(map); allObjects.push(m);
+document.getElementById('toolbar').addEventListener('click', e=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  const m = btn.dataset.mode;
+  setMode(mode === m ? null : m);
+});
+
+function addHistory(layer){
+  history.push(layer);
 }
 
-function onMapClick(e){
- if(!currentTool)return;
- if(currentTool==='pole'){const n=prompt('電柱番号を入力');if(n)createPoleMarker(e.latlng,n,false);}
- else if(currentTool==='trans'){const n=prompt('電柱番号を入力');if(n)createPoleMarker(e.latlng,n,true);}
- else if(currentTool==='line'){if(!tempLine){tempLine=L.polyline([e.latlng],{color:'#e60012',weight:4,dashArray:'6,4'}).addTo(map);}else{tempLine.addLatLng(e.latlng);}}
- else if(currentTool==='rect'){if(!drawingRectStart){drawingRectStart=e.latlng;setStatusTemp('対角を選択してください');}else{const r=L.rectangle([drawingRectStart,e.latlng],{color:'#e60012',weight:3,fill:false});r._type='rect';r.addTo(map);allObjects.push(r);drawingRectStart=null;updateStatus();}}
- else if(currentTool==='text'){const t=prompt('テキストを入力');if(t)createTextMarker(e.latlng,t);}
-}
-function onMapDblClick(e){
- if(currentTool==='line' && tempLine){
-  L.DomEvent.stopPropagation(e);
-  const latlngs=tempLine.getLatLngs();
-  if(latlngs.length>1)latlngs.pop();
-  map.removeLayer(tempLine);tempLine=null;
-  if(latlngs.length>=2){const line=L.polyline(latlngs,{color:'#e60012',weight:4});line._type='line';line.addTo(map);allObjects.push(line);}
-  setStatusTemp('引込線を確定しました');
- }
-}
-function setStatusTemp(msg){const el=document.getElementById('statusMsg');el.textContent=msg;setTimeout(updateStatus,1500);}
-
-function undo(){if(allObjects.length){const l=allObjects.pop();map.removeLayer(l);}if(tempLine){map.removeLayer(tempLine);tempLine=null}}
-function clearAllSilent(){allObjects.forEach(l=>map.removeLayer(l));allObjects=[];if(tempLine){map.removeLayer(tempLine);tempLine=null}drawingRectStart=null;if(gpsMarker){map.removeLayer(gpsMarker);gpsMarker=null}}
-function clearAll(){if(confirm('全ての作図を削除しますか？')){clearAllSilent();setStatusTemp('全消去しました')}}
-
-function doGPS(){
- if(!navigator.geolocation){alert('この端末では位置情報が利用できません');return}
- setStatusTemp('GPS取得中…');
- navigator.geolocation.getCurrentPosition(pos=>{
-  const {latitude:lat,longitude:lng}=pos.coords;
-  map.setView([lat,lng],19);
-  if(gpsMarker)map.removeLayer(gpsMarker);
-  gpsMarker=L.circleMarker([lat,lng],{radius:9,color:'#2563eb',weight:3,fillColor:'#3b82f6',fillOpacity:0.9}).addTo(map).bindPopup('現在地').openPopup();
-  setStatusTemp('現在地に移動しました');
- },err=>{
-  alert('位置情報の取得が拒否されました。ブラウザの設定で許可してください。');
- },{enableHighAccuracy:true,timeout:12000,maximumAge:0});
+function makePole(latlng, label, kind='pole'){
+  const isHH = kind === 'hh';
+  const html = `<div class="pole-wrap"><div class="pole-circle"></div><div class="pole-label">${label||''}</div></div>`;
+  const icon = L.divIcon({className: isHH ? 'hh-icon' : 'pole-icon', html: html, iconSize:[30,40], iconAnchor:[15,15]});
+  const m = L.marker(latlng, {draggable:true, icon: icon});
+  m.options.kind = kind;
+  m.options.label = label || '';
+  m.feature = {type:'Feature', properties:{kind: kind, label: label||''}};
+  m.on('dblclick', ()=>{
+    const nv = prompt(isHH ? 'ハンドホール名' : '電柱番号', m.options.label);
+    if(nv !== null){
+      m.options.label = nv;
+      m.feature.properties.label = nv;
+      m.setIcon(L.divIcon({className: isHH ? 'hh-icon' : 'pole-icon', html: `<div class="pole-wrap"><div class="pole-circle"></div><div class="pole-label">${nv}</div></div>`, iconSize:[30,40], iconAnchor:[15,15]}));
+    }
+  });
+  return m;
 }
 
-function getForm(){return{genba:val('genba'),koji:val('koji'),kyuden:val('kyuden'),rui:val('rui'),kansei:val('kansei'),kensa:val('kensa'),meter:document.querySelector('input[name="meter"]:checked')?.value||'',biko:val('biko'),address:val('address')}}
-function val(id){return document.getElementById(id).value.trim()}
-function setForm(f){document.getElementById('genba').value=f.genba||'';document.getElementById('koji').value=f.koji||'本設';document.getElementById('kyuden').value=f.kyuden||'単相3線';document.getElementById('rui').value=f.rui||'二類';document.getElementById('kansei').value=f.kansei||'';document.getElementById('kensa').value=f.kensa||'';document.getElementById('biko').value=f.biko||'';document.getElementById('address').value=f.address||'';if(f.meter){const r=document.querySelector(`input[name="meter"][value="${f.meter}"]`);if(r)r.checked=true}}
-
-function saveData(){
- const f=getForm();
- if(!f.genba){alert('現場名を入力してください');document.getElementById('genba').focus();return}
- const data={form:f,map:{center:[map.getCenter().lat,map.getCenter().lng],zoom:map.getZoom()},objects:allObjects.map(o=>{
-  if(o._type==='pole'||o._type==='trans')return{type:o._type,lat:o.getLatLng().lat,lng:o.getLatLng().lng,number:o._number};
-  if(o._type==='line')return{type:'line',latlngs:o.getLatLngs().map(p=>[p.lat,p.lng])};
-  if(o._type==='rect'){const b=o.getBounds();return{type:'rect',sw:[b.getSouthWest().lat,b.getSouthWest().lng],ne:[b.getNorthEast().lat,b.getNorthEast().lng]}}
-  if(o._type==='text')return{type:'text',lat:o.getLatLng().lat,lng:o.getLatLng().lng,text:o._text};
- }).filter(Boolean)};
- localStorage.setItem('den_'+f.genba,JSON.stringify(data));
- setStatusTemp('保存しました');alert('保存しました');
-}
-function loadData(){
- const keys=Object.keys(localStorage).filter(k=>k.startsWith('den_')).map(k=>k.slice(4));
- if(!keys.length){alert('保存データがありません');return}
- const name=prompt('読込する現場名を入力または選択:\n'+keys.join('\n'));
- if(!name)return;
- const raw=localStorage.getItem('den_'+name);
- if(!raw){alert('データが見つかりません');return}
- const data=JSON.parse(raw);
- clearAllSilent();
- setForm(data.form||{});
- if(data.map)map.setView(data.map.center,data.map.zoom);
- (data.objects||[]).forEach(o=>{
-  if(o.type==='pole'||o.type==='trans')createPoleMarker([o.lat,o.lng],o.number,o.type==='trans');
-  else if(o.type==='line'){const l=L.polyline(o.latlngs,{color:'#e60012',weight:4});l._type='line';l.addTo(map);allObjects.push(l);}
-  else if(o.type==='rect'){const r=L.rectangle([[o.sw[0],o.sw[1]],[o.ne[0],o.ne[1]]],{color:'#e60012',weight:3,fill:false});r._type='rect';r.addTo(map);allObjects.push(r);}
-  else if(o.type==='text')createTextMarker([o.lat,o.lng],o.text);
- });
- setStatusTemp('読込完了');alert('読込完了');
+function makeText(latlng, txt){
+  const icon = L.divIcon({className:'', html:`<div class="map-text">${txt}</div>`, iconSize:[10,10]});
+  const m = L.marker(latlng, {draggable:true, icon:icon});
+  m.options.kind = 'text';
+  m.options.label = txt;
+  m.feature = {type:'Feature', properties:{kind:'text', label:txt}};
+  m.on('dblclick', ()=>{
+    const nv = prompt('テキスト編集', m.options.label);
+    if(nv !== null){
+      m.options.label = nv;
+      m.feature.properties.label = nv;
+      m.setIcon(L.divIcon({className:'', html:`<div class="map-text">${nv}</div>`}));
+    }
+  });
+  return m;
 }
 
-function shareLINE(){
- const f=getForm();
- const c=map.getCenter();
- const poles=allObjects.filter(o=>o._type==='pole'||o._type==='trans').map(o=>o._number+(o._type==='trans'?'(Tr)':'')).join('、')||'なし';
- const text=`【${f.genba||'現場名未設定'}】 工事:${f.koji}/${f.kyuden}/${f.rui} メーター:${f.meter} 完成:${f.kansei||'-'} 検査:${f.kensa||'-'} 位置:https://maps.google.com/?q=${c.lat.toFixed(6)},${c.lng.toFixed(6)} 電柱:${poles} 備考:${f.biko||'-'}`;
- if(navigator.share){navigator.share({title:'位置図',text}).catch(()=>{});}else{window.open('https://line.me/R/msg/text/?'+encodeURIComponent(text),'_blank');}
+map.on('click', e=>{
+  if(!mode) return;
+  
+  if(mode === 'pole'){
+    const num = prompt('電柱番号を入力');
+    if(num === null){ setMode(null); return; }
+    const m = makePole(e.latlng, num, 'pole');
+    drawn.addLayer(m);
+    addHistory(m);
+    setMode(null);
+  } else if(mode === 'hh'){
+    const num = prompt('ハンドホール名を入力');
+    if(num === null){ setMode(null); return; }
+    const m = makePole(e.latlng, num, 'hh');
+    drawn.addLayer(m);
+    addHistory(m);
+    setMode(null);
+  } else if(mode === 'text'){
+    const txt = prompt('テキストを入力');
+    if(txt === null || txt === ''){ setMode(null); return; }
+    const m = makeText(e.latlng, txt);
+    drawn.addLayer(m);
+    addHistory(m);
+    setMode(null);
+  } else if(mode === 'lvline'){
+    if(!temp.line){
+      temp.points = [e.latlng];
+      temp.line = L.polyline(temp.points, {color:'#000', weight:4, opacity:0.9}).addTo(drawn);
+    } else {
+      temp.points.push(e.latlng);
+      temp.line.setLatLngs(temp.points);
+    }
+  } else if(mode === 'svc'){
+    if(!temp.start){
+      temp.start = e.latlng;
+      setStatus('引込線:終点をクリック');
+    } else {
+      const line = L.polyline([temp.start, e.latlng], {color:'#dc2626', weight:4}).addTo(drawn);
+      line.feature = {type:'Feature', properties:{kind:'svc'}};
+      const dist = map.distance(temp.start, e.latlng);
+      const mid = L.latLng((temp.start.lat + e.latlng.lat)/2, (temp.start.lng + e.latlng.lng)/2);
+      const label = L.marker(mid, {
+        icon: L.divIcon({className:'dist-label', html:`<div>${dist.toFixed(1)}m</div>`}),
+        interactive:false
+      }).addTo(drawn);
+      label.feature = {type:'Feature', properties:{kind:'dist', label:dist.toFixed(1)+'m'}};
+      addHistory(line);
+      addHistory(label);
+      temp.start = null;
+      setMode(null);
+    }
+  } else if(mode === 'bldg'){
+    if(!temp.start){
+      temp.start = e.latlng;
+      setStatus('建物:対角点をクリック');
+    } else {
+      const bounds = L.latLngBounds(temp.start, e.latlng);
+      const rect = L.rectangle(bounds, {color:'#2563eb', weight:2.5, fillOpacity:0.08}).addTo(drawn);
+      rect.feature = {type:'Feature', properties:{kind:'bldg'}};
+      addHistory(rect);
+      temp.start = null;
+      setMode(null);
+    }
+  }
+});
+
+map.on('dblclick', e=>{
+  if(mode === 'lvline' && temp.line && temp.points.length >= 2){
+    temp.line.feature = {type:'Feature', properties:{kind:'lvline'}};
+    addHistory(temp.line);
+    temp.line = null;
+    temp.points = [];
+    setMode(null);
+  }
+});
+
+map.on('mousemove', e=>{
+  coordsEl.textContent = `${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}  Z${map.getZoom()}`;
+});
+
+let gpsMarker = null;
+document.getElementById('btnGps').onclick = ()=>{
+  if(!navigator.geolocation){ alert('GPS非対応'); return; }
+  setStatus('GPS測位中...');
+  navigator.geolocation.getCurrentPosition(p=>{
+    const ll = [p.coords.latitude, p.coords.longitude];
+    map.setView(ll, 18);
+    if(gpsMarker) drawn.removeLayer(gpsMarker);
+    gpsMarker = L.circleMarker(ll, {radius:8, color:'#2563eb', fillColor:'#3b82f6', fillOpacity:0.9, weight:2}).addTo(drawn);
+    setStatus(`GPS精度±${Math.round(p.coords.accuracy)}m`);
+  }, err=>{
+    alert('GPS取得失敗: ' + err.message);
+    setStatus('GPS失敗');
+  }, {enableHighAccuracy:true, timeout:10000});
+};
+
+document.getElementById('btnUndo').onclick = ()=>{
+  const last = history.pop();
+  if(last){ drawn.removeLayer(last); setStatus('1つ戻しました'); }
+};
+document.getElementById('btnClear').onclick = ()=>{
+  if(confirm('全ての作図を削除しますか？')){
+    drawn.clearLayers();
+    history = [];
+    gpsMarker = null;
+    setStatus('全消去');
+  }
+};
+
+function getForm(){
+  return {
+    genba: document.getElementById('genba').value,
+    jusho: document.getElementById('jusho').value,
+    koji: document.getElementById('koji').value,
+    kyu: document.getElementById('kyu').value,
+    kyoku: document.getElementById('kyoku').value,
+    gaiType: document.getElementById('gaiType').value,
+    gaiSize: document.getElementById('gaiSize').value,
+    juten: document.getElementById('juten').value,
+    kensa: document.getElementById('kensa').value,
+    boxColor: document.getElementById('boxColor').value,
+    biko: document.getElementById('biko').value,
+    center: map.getCenter(),
+    zoom: map.getZoom()
+  };
+}
+function setForm(d){
+  if(!d) return;
+  document.getElementById('genba').value = d.genba||'';
+  document.getElementById('jusho').value = d.jusho||'';
+  document.getElementById('koji').value = d.koji||'本設';
+  document.getElementById('kyu').value = d.kyu||'二類';
+  document.getElementById('kyoku').value = d.kyoku||'';
+  document.getElementById('gaiType').value = d.gaiType||'OW';
+  document.getElementById('gaiSize').value = d.gaiSize||'2.0mm';
+  document.getElementById('juten').value = d.juten||'';
+  document.getElementById('kensa').value = d.kensa||'';
+  document.getElementById('boxColor').value = d.boxColor||'ベージュ';
+  document.getElementById('biko').value = d.biko||'';
+  if(d.center && d.zoom) map.setView([d.center.lat, d.center.lng], d.zoom);
 }
 
-async function exportPNG(){
- const f=getForm();
- setStatusTemp('PNG生成中…');
- try{
-  const mapEl=document.getElementById('map');
-  const canvas=await html2canvas(mapEl,{useCORS:true,allowTaint:false,logging:false,scale:2,backgroundColor:'#e5e7eb'});
-  const a=document.createElement('a');
-  a.download=(f.genba||'位置図')+'.png';
-  a.href=canvas.toDataURL('image/png');
-  a.click();
-  setStatusTemp('PNG出力完了');
- }catch(e){console.error(e);alert('PNG出力に失敗しました。航空写真の場合は地図に切り替えてお試しください。')}
-}
+document.getElementById('btnSave').onclick = ()=>{
+  const data = {
+    form: getForm(),
+    geo: drawn.toGeoJSON()
+  };
+  localStorage.setItem('denryoku_v8', JSON.stringify(data));
+  setStatus('保存しました');
+  alert('保存しました');
+};
+document.getElementById('btnLoad').onclick = ()=>{
+  const s = localStorage.getItem('denryoku_v8');
+  if(!s){ alert('保存データなし'); return; }
+  try{
+    const data = JSON.parse(s);
+    setForm(data.form);
+    drawn.clearLayers();
+    history = [];
+    L.geoJSON(data.geo, {
+      pointToLayer: (f, ll)=>{
+        const p = f.properties||{};
+        if(p.kind === 'pole' || p.kind === 'hh') return makePole(ll, p.label, p.kind);
+        if(p.kind === 'text') return makeText(ll, p.label);
+        if(p.kind === 'dist') return L.marker(ll, {icon:L.divIcon({className:'dist-label', html:`<div>${p.label}</div>`}), interactive:false});
+        return L.marker(ll);
+      },
+      style: (f)=>{
+        const k = f.properties?.kind;
+        if(k === 'lvline') return {color:'#000', weight:4};
+        if(k === 'svc') return {color:'#dc2626', weight:4};
+        if(k === 'bldg') return {color:'#2563eb', weight:2.5, fillOpacity:0.08};
+        return {};
+      },
+      onEachFeature: (f,l)=>{ drawn.addLayer(l); history.push(l); }
+    });
+    setStatus('読込完了');
+  }catch(e){ alert('読込失敗'); }
+};
 
-async function searchAddress(){
- const q=val('address'); if(!q){alert('住所を入力してください');return}
- setStatusTemp('住所検索中…');
- try{
-  const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=jp&limit=1&addressdetails=1`,{headers:{'Accept-Language':'ja'}});
-  const data=await res.json();
-  if(data.length){const r=data[0];map.setView([parseFloat(r.lat),parseFloat(r.lon)],18);setStatusTemp('検索完了');}else{alert('住所が見つかりませんでした');updateStatus();}
- }catch(e){alert('検索エラーが発生しました');updateStatus();}
-}
+document.getElementById('btnLine').onclick = ()=>{
+  const f = getForm();
+  const lines = [
+    '【電力申請 位置図】',
+    `現場名: ${f.genba}`,
+    `住所: ${f.jusho}`,
+    `工事種別: ${f.koji} / ${f.kyu}`,
+    `供給区分: ${f.kyoku}`,
+    `外線: ${f.gaiType} ${f.gaiSize}`,
+    `受点完成: ${f.juten}  検査希望: ${f.kensa}`,
+    `メーターBOX: ${f.boxColor}`,
+    f.biko ? `備考: ${f.biko}` : '',
+    `地図: https://maps.google.com/?q=${map.getCenter().lat.toFixed(6)},${map.getCenter().lng.toFixed(6)}`
+  ].filter(Boolean).join('\n');
+  const url = 'https://line.me/R/msg/text/?' + encodeURIComponent(lines);
+  window.open(url, '_blank');
+};
+
+document.getElementById('btnPng').onclick = async ()=>{
+  setStatus('PNG生成中...');
+  try{
+    const canvas = await html2canvas(document.getElementById('map'), {useCORS:true, allowTaint:true, backgroundColor:null, scale:2});
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    const name = (document.getElementById('genba').value || '位置図') + '_v8.png';
+    a.download = name;
+    a.click();
+    setStatus('PNG出力完了');
+  }catch(e){
+    alert('PNG出力に失敗しました');
+    setStatus('PNG失敗');
+  }
+};
+
+document.getElementById('btnSearch').onclick = async ()=>{
+  const q = document.getElementById('search').value.trim();
+  if(!q) return;
+  setStatus('検索中...');
+  try{
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=jp&limit=1`);
+    const data = await res.json();
+    if(data && data[0]){
+      map.setView([+data[0].lat, +data[0].lon], 18);
+      setStatus('検索完了');
+    }else{
+      setStatus('見つかりません');
+      alert('見つかりませんでした');
+    }
+  }catch(e){
+    setStatus('検索エラー');
+  }
+};
+
+// 初期ロード
+(function(){
+  const s = localStorage.getItem('denryoku_v8');
+  if(s){
+    try{
+      const d = JSON.parse(s);
+      setForm(d.form);
+    }catch{}
+  }
+  setTimeout(()=>map.invalidateSize(), 300);
+})();
+window.addEventListener('resize', ()=>map.invalidateSize());
 </script>
 </body>
 </html>
