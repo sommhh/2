@@ -192,7 +192,7 @@
 })();</script>
 <script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
 <meta charset="UTF-8">
-<title>電力申請 v36.1</title>
+<title>電力申請 v40</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -213,7 +213,6 @@ button{cursor:pointer;-webkit-user-select:none;user-select:none;touch-action:man
 .tg{width:32px;height:32px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:6px;color:#fff;font-size:16px}
 .btns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .btns button{height:36px;background:#fff;color:#1e3a8a;border:none;border-radius:6px;font-size:11px;font-weight:600}
-.btns button:active{transform:scale(0.96)}
 .form{flex:1;overflow-y:auto;padding:10px;background:#f9fafb;-webkit-overflow-scrolling:touch}
 .f{margin-bottom:10px}
 .f label{display:block;font-size:12px;font-weight:600;margin-bottom:3px;color:#374151}
@@ -223,16 +222,16 @@ button{cursor:pointer;-webkit-user-select:none;user-select:none;touch-action:man
 .r label{display:flex;align-items:center;gap:5px;font-size:13px;padding:4px}
 .r input{width:18px;height:18px;accent-color:#2563eb}
 .chk{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
-.chk label{font-size:13px;display:flex;align-items:center;gap:6px;padding:7px 8px;background:#fff;border:1.5px solid #e5e7eb;border-radius:7px;cursor:pointer;transition:all .15s}
+.chk label{font-size:13px;display:flex;align-items:center;gap:6px;padding:7px 8px;background:#fff;border:1.5px solid #e5e7eb;border-radius:7px;cursor:pointer}
 .chk label:has(input:checked){background:#eff6ff;border-color:#2563eb;color:#1e3a8a;font-weight:600}
-.chk input{width:17px;height:17px;accent-color:#2563eb}
+.chk input{width:17px;height:17px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .mapw{flex:1;position:relative;background:#cbd5e1;overflow:hidden}
 #map{width:100%;height:100%;background:#e5e7eb}
-.tools{position:absolute;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:1100;background:rgba(255,255,255,0.98);padding:6px;border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,0.25);display:flex;gap:4px;max-width:calc(100% - 20px);overflow-x:auto;-webkit-overflow-scrolling:touch}
-.tools button{height:50px;min-width:62px;padding:4px 8px;background:#fff;border:2px solid #e5e7eb;border-radius:10px;font-size:11px;font-weight:600;line-height:1.15;flex-shrink:0}
+.tools{position:absolute;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:1100;background:rgba(255,255,255,0.98);padding:6px;border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,0.25);display:flex;gap:4px;max-width:calc(100% - 20px);overflow-x:auto}
+.tools button{height:50px;min-width:62px;padding:4px 8px;background:#fff;border:2px solid #e5e7eb;border-radius:10px;font-size:11px;font-weight:600;position:relative}
 .tools button.on{background:#2563eb;color:#fff;border-color:#2563eb}
-.tools button:active{transform:scale(0.94)}
+.tools button[data-t="bldf"].ready::after{content:"✓";position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;width:18px;height:18px;border-radius:9px;font-size:10px;display:flex;align-items:center;justify-content:center}
 .hint{position:absolute;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.92);color:#fff;padding:9px 16px;border-radius:18px;font-size:12px;z-index:1000;pointer-events:none;opacity:0;transition:opacity .2s;max-width:90%;text-align:center}
 .hint.show{opacity:1}
 .fab{position:absolute;bottom:calc(90px + env(safe-area-inset-bottom));right:14px;width:52px;height:52px;border-radius:26px;background:#1e3a8a;color:#fff;border:none;font-size:22px;z-index:1002;display:none;box-shadow:0 3px 12px rgba(0,0,0,0.35);align-items:center;justify-content:center}
@@ -245,25 +244,22 @@ button{cursor:pointer;-webkit-user-select:none;user-select:none;touch-action:man
 .text-lab{background:#fff;border:2px solid #1f2937;padding:4px 8px;font-size:12px;font-weight:600;white-space:nowrap;border-radius:5px;box-shadow:0 2px 5px rgba(0,0,0,0.25);cursor:pointer}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:5000;display:none;align-items:center;justify-content:center;padding:20px}
 .modal.show{display:flex}
-.modal-box{background:#fff;width:100%;max-width:440px;border-radius:16px;padding:20px;animation:pop .18s ease-out}
-@keyframes pop{from{transform:scale(0.96);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-box{background:#fff;width:100%;max-width:440px;border-radius:16px;padding:20px}
 .modal h3{font-size:17px;margin-bottom:14px}
 .modal .row{margin-bottom:12px}
 .modal label{font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:600}
 .modal input,.modal select{width:100%;padding:12px;border:2px solid #d1d5db;border-radius:10px;font-size:16px}
-.modal input:focus,.modal select:focus{outline:none;border-color:#2563eb}
 .modal-btns{display:flex;gap:10px;margin-top:16px}
 .modal-btns button{flex:1;height:46px;border:none;border-radius:10px;font-size:15px;font-weight:600}
 .modal-ok{background:#2563eb;color:#fff}
 .modal-cancel{background:#f3f4f6}
-.leaflet-control-attribution{font-size:10px!important;background:rgba(255,255,255,0.85)!important}
 </style>
 </head>
 <body>
 <div class="app">
   <div class="sidebar" id="sb">
     <div class="head">
-      <div class="top"><h1>⚡ 電力申請 v36.1</h1><button class="tg" id="tg" type="button">▼</button></div>
+      <div class="top"><h1>⚡ 電力申請 v40</h1><button class="tg" id="tg" type="button">▼</button></div>
       <div class="btns">
         <button id="gps" type="button">📍 GPS</button>
         <button id="save" type="button">💾 保存</button>
@@ -277,50 +273,24 @@ button{cursor:pointer;-webkit-user-select:none;user-select:none;touch-action:man
       <div class="f"><label>現場名</label><input id="genba" placeholder="〇〇邸"></div>
       <div class="f"><label>住所</label><input id="jusho" placeholder="宮城県名取市..."></div>
       <div class="f"><label>工事種別</label><div class="r"><label><input type="radio" name="k" value="本設" checked>本設</label><label><input type="radio" name="k" value="仮設">仮設</label></div></div>
-      
-      <div class="f"><label>供給方式</label>
-        <select id="kyokyu">
-          <option>単相2線式 100V</option>
-          <option selected>単相3線式 100V/200V</option>
-          <option>三相3線式 200V</option>
-        </select>
-      </div>
-      
+      <div class="f"><label>供給方式</label><select id="kyokyu"><option>単相2線式 100V</option><option selected>単相3線式 100V/200V</option><option>三相3線式 200V</option></select></div>
       <div class="grid2">
         <div class="f"><label>契約種別</label><select id="keiyaku"><option>従量電灯B</option><option>従量電灯C</option><option>低圧電力</option></select></div>
         <div class="f"><label>契約容量</label><select id="amp"><option value="">選択</option><option>15A</option><option>20A</option><option>30A</option><option>40A</option><option>50A</option><option>60A</option><option>6kVA</option><option>8kVA</option><option>10kVA</option><option>12kVA</option><option>15kVA</option></select></div>
       </div>
-      
       <div class="f"><label>引込線</label><div class="grid2"><select id="dv"><option>DV2線</option><option selected>DV3線</option></select><select id="sz"><option>3.2mm</option><option>14mm²</option><option>22mm²</option><option>38mm²</option><option>60mm²</option></select></div></div>
-      
       <div class="grid2">
         <div class="f"><label>引込柱番号</label><input id="hikikomi_basho" placeholder="名取12"></div>
         <div class="f"><label>トランス柱番号</label><input id="trans_basho" placeholder="名取15"></div>
       </div>
-      
       <div class="grid2">
-        <div class="f"><label>トランス1容量</label><select id="trans_cap1"><option value="">-</option><option>5kVA</option><option>10kVA</option><option>15kVA</option><option>20kVA</option><option>25kVA</option><option>30kVA</option><option>40kVA</option><option>50kVA</option><option>60kVA</option><option>75kVA</option></select></div>
-        <div class="f"><label>トランス2容量</label><select id="trans_cap2"><option value="">-</option><option>5kVA</option><option>10kVA</option><option>15kVA</option><option>20kVA</option><option>25kVA</option><option>30kVA</option><option>40kVA</option><option>50kVA</option><option>60kVA</option><option>75kVA</option></select></div>
+        <div class="f"><label>トランス1</label><select id="trans_cap1"><option value="">-</option><option>5kVA</option><option>10kVA</option><option>15kVA</option><option>20kVA</option><option>25kVA</option><option>30kVA</option><option>40kVA</option><option>50kVA</option><option>60kVA</option><option>75kVA</option></select></div>
+        <div class="f"><label>トランス2</label><select id="trans_cap2"><option value="">-</option><option>5kVA</option><option>10kVA</option><option>15kVA</option><option>20kVA</option><option>25kVA</option><option>30kVA</option><option>40kVA</option><option>50kVA</option><option>60kVA</option><option>75kVA</option></select></div>
       </div>
-      
       <div class="f"><label>区分</label><div class="r"><label><input type="checkbox" id="h1">二類</label><label><input type="checkbox" id="h2">三類</label><label><input type="checkbox" id="h3">空中分岐</label></div></div>
       <div class="f"><label>メーター</label><div class="r"><label><input type="radio" name="m" value="ベージュ" checked>ベージュ</label><label><input type="radio" name="m" value="グレー">グレー</label><label><input type="radio" name="m" value="なし">なし</label></div></div>
-      
-      <div class="f"><label>設備</label>
-        <div class="chk">
-          <label><input type="checkbox" id="e1">☀️ 太陽光</label>
-          <label><input type="checkbox" id="e2">♨️ エコキュート</label>
-          <label><input type="checkbox" id="e3">🍳 IH</label>
-          <label><input type="checkbox" id="e4">🚗 EV充電</label>
-          <label><input type="checkbox" id="e5">🔋 蓄電池</label>
-          <label><input type="checkbox" id="e6">🏠 オール電化</label>
-        </div>
-      </div>
-      
-      <div class="grid2">
-        <div class="f"><label>受点予定</label><input id="juten" type="date"></div>
-        <div class="f"><label>検査日</label><input id="kensa" type="date"></div>
-      </div>
+      <div class="f"><label>設備</label><div class="chk"><label><input type="checkbox" id="e1">☀️ 太陽光</label><label><input type="checkbox" id="e2">♨️ エコキュート</label><label><input type="checkbox" id="e3">🍳 IH</label><label><input type="checkbox" id="e4">🚗 EV充電</label><label><input type="checkbox" id="e5">🔋 蓄電池</label><label><input type="checkbox" id="e6">🏠 オール電化</label></div></div>
+      <div class="grid2"><div class="f"><label>受点予定</label><input id="juten" type="date"></div><div class="f"><label>検査日</label><input id="kensa" type="date"></div></div>
       <div class="f"><label>備考</label><textarea id="biko" rows="2"></textarea></div>
     </div>
   </div>
@@ -341,129 +311,107 @@ button{cursor:pointer;-webkit-user-select:none;user-select:none;touch-action:man
     <div class="hint" id="hint">ツール選択→地図タップ</div>
   </div>
 </div>
-
-<div class="modal" id="modal">
-  <div class="modal-box">
-    <h3 id="mtitle">入力</h3>
-    <div id="mbody"></div>
-    <div class="modal-btns">
-      <button class="modal-cancel" id="mcancel" type="button">キャンセル</button>
-      <button class="modal-ok" id="mok" type="button">OK</button>
-    </div>
-  </div>
-</div>
-
+<div class="modal" id="modal"><div class="modal-box"><h3 id="mtitle">入力</h3><div id="mbody"></div><div class="modal-btns"><button class="modal-cancel" id="mcancel" type="button">キャンセル</button><button class="modal-ok" id="mok" type="button">OK</button></div></div></div>
 <script>
 !function(){
   const $=id=>document.getElementById(id);
   const hint=$('hint'), modal=$('modal'), mbody=$('mbody');
   let mResolve=null;
+  const geoCache = (()=>{try{return JSON.parse(localStorage.getItem('geoCache')||'{}')}catch(e){return {}}})();
+  const saveGeoCache = ()=>{try{localStorage.setItem('geoCache', JSON.stringify(geoCache))}catch(e){}};
   
-  function showModal(title,html,init){$('mtitle').textContent=title;mbody.innerHTML=html;modal.classList.add('show');if(init)init();return new Promise(r=>{mResolve=r})}
-  $('mok').onclick=()=>{if(mResolve){const data={};mbody.querySelectorAll('input,select').forEach(el=>{data[el.id||el.name]=el.value});mResolve(data)}modal.classList.remove('show');mResolve=null};
+  function showModal(title,html){$('mtitle').textContent=title;mbody.innerHTML=html;modal.classList.add('show');return new Promise(r=>{mResolve=r})}
+  $('mok').onclick=()=>{if(mResolve){const data={};mbody.querySelectorAll('input,select,textarea').forEach(el=>{if(el.type==='radio'){if(el.checked)data[el.name]=el.value;return}const key=el.id||el.name;if(!key)return;data[key]=el.value});mResolve(data)}modal.classList.remove('show');mResolve=null};
   $('mcancel').onclick=()=>{modal.classList.remove('show');if(mResolve)mResolve(null);mResolve=null};
-  modal.onclick=e=>{if(e.target===modal)$('mcancel').click()};
   
-  const show=t=>{hint.textContent=t;hint.classList.add('show');clearTimeout(show._t);show._t=setTimeout(()=>hint.classList.remove('show'),2000)};
+  const show=t=>{hint.textContent=t;hint.classList.add('show');clearTimeout(show._t);show._t=setTimeout(()=>hint.classList.remove('show'),1800)};
   const vib=p=>{try{if(navigator.vibrate)navigator.vibrate(p||10)}catch(e){}};
   const getR=n=>document.querySelector(`input[name="${n}"]:checked`)?.value||'';
   const setR=(n,v)=>{document.querySelectorAll(`input[name="${n}"]`).forEach(e=>e.checked=false);if(v){const e=document.querySelector(`input[name="${n}"][value="${v}"]`);if(e)e.checked=true}};
   
-  const map=L.map('map',{zoomControl:false,attributionControl:true,preferCanvas:true}).setView([38.172,140.882],18);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:21,attribution:'© OpenStreetMap'}).addTo(map);
+  const map=L.map('map',{zoomControl:false,preferCanvas:true}).setView([38.172,140.882],18);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:21,attribution:'©OSM'}).addTo(map);
   L.control.zoom({position:'bottomright'}).addTo(map);
-  const fix=()=>setTimeout(()=>map.invalidateSize(),200);window.addEventListener('resize',fix);window.addEventListener('orientationchange',fix);setTimeout(fix,500);
+  const layerGroup=L.layerGroup().addTo(map);
   
-  const state={tool:null,objs:[],undo:[],tmp:[],last:0,lastTap:0};
+  if(window.ResizeObserver){new ResizeObserver(()=>map.invalidateSize()).observe(document.getElementById('map'))}
   
-  function add(t,d){const o={t,id:'o'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),d};state.objs.push(o);state.undo.push(o);if(state.undo.length>200)state.undo.shift();render(o);save();vib(10);return o}
+  const state={tool:null,objs:[],undo:[],tmp:[],last:0};
   
+  // 改善1: pushHistory軽量化
+  function pushHistory(){
+    if(state.objs.length>200){ // 大規模現場は履歴制限
+      if(state.undo.length>10) state.undo.shift();
+      return;
+    }
+    const snap = JSON.stringify(state.objs.map(o=>({t:o.t,d:o.d,id:o.id})));
+    if(state.undo[state.undo.length-1] !== snap){
+      state.undo.push(snap);
+      if(state.undo.length>30) state.undo.shift(); // 30→軽量化
+    }
+  }
+  
+  function add(t,d){pushHistory();const o={t,id:'o'+Date.now().toString(36)+Math.random().toString(36).slice(2),d:JSON.parse(JSON.stringify(d))};state.objs.push(o);render(o);requestSave();vib(10);return o}
+  
+  // 改善3: render再利用
   function render(o){
     const d=o.d;
-    if(o._m)map.removeLayer(o._m);if(o._l)map.removeLayer(o._l);
+    if(!o._group){o._group=L.layerGroup();layerGroup.addLayer(o._group)}else{o._group.clearLayers()}
     if(o.t==='pole'){
-      const html=`<div class="marker-pole">${(d.no||'').slice(-2)}</div>`;
-      o._m=L.marker([d.lat,d.lng],{icon:L.divIcon({className:'',html,iconSize:[26,26],iconAnchor:[13,13]})}).addTo(map);
-      if(d.no){o._l=L.marker([d.lat,d.lng],{icon:L.divIcon({className:'',html:`<div class="marker-label">${d.no}</div>`}),interactive:true}).addTo(map);o._l.on('click',()=>editObj(o))}
-      o._m.on('click',()=>editObj(o));
+      const m=L.marker([d.lat,d.lng],{icon:L.divIcon({className:'',html:`<div class="marker-pole">${(d.no||'').slice(-2)}</div>`,iconSize:[26,26],iconAnchor:[13,13]})});
+      m.on('click',()=>editObj(o));o._group.addLayer(m);
+      if(d.no){const l=L.marker([d.lat,d.lng],{icon:L.divIcon({className:'',html:`<div class="marker-label">${d.no}</div>`}),interactive:true});l.on('click',()=>editObj(o));o._group.addLayer(l)}
     }else if(o.t==='trans'){
-      const cap=d.cap?d.cap.replace('kVA',''):'';const html=`<div class="marker-trans">${cap}</div>`;
-      o._m=L.marker([d.lat,d.lng],{icon:L.divIcon({className:'',html,iconSize:[28,28],iconAnchor:[14,14]})}).addTo(map);
-      const label=[d.no,d.cap].filter(Boolean).join(' ');
-      if(label){o._l=L.marker([d.lat,d.lng],{icon:L.divIcon({className:'',html:`<div class="marker-label red">${label}</div>`}),interactive:true}).addTo(map);o._l.on('click',()=>editObj(o))}
-      o._m.on('click',()=>editObj(o));
+      const cap=d.cap?d.cap.replace('kVA',''):'';const m=L.marker([d.lat,d.lng],{icon:L.divIcon({className:'',html:`<div class="marker-trans">${cap}</div>`,iconSize:[28,28],iconAnchor:[14,14]})});m.on('click',()=>editObj(o));o._group.addLayer(m);
+      const label=[d.no,d.cap].filter(Boolean).join(' ');if(label){const l=L.marker([d.lat,d.lng],{icon:L.divIcon({className:'',html:`<div class="marker-label red">${label}</div>`}),interactive:true});l.on('click',()=>editObj(o));o._group.addLayer(l)}
     }else if(o.t==='line'||o.t==='hikikomi'||o.t==='bunki'){
-      const opt={color:o.t==='line'?'#000':'#dc2626',weight:4,opacity:0.95,lineCap:'round'};
-      if(o.t==='bunki')opt.dashArray='6,8';
-      o._m=L.polyline([[d.p1.lat,d.p1.lng],[d.p2.lat,d.p2.lng]],opt).addTo(map);
-      const dist=d.dist||map.distance(d.p1,d.p2).toFixed(1);
-      const mid=[(d.p1.lat+d.p2.lat)/2,(d.p1.lng+d.p2.lng)/2];
-      o._l=L.marker(mid,{icon:L.divIcon({className:'',html:`<div class="marker-label red" style="cursor:pointer">${dist}m</div>`}),interactive:true}).addTo(map);
-      o._l.on('click',()=>editLength(o));o._m.on('click',()=>editLength(o));
+      const opt={color:o.t==='line'?'#000':'#dc2626',weight:4,opacity:0.95};if(o.t==='bunki')opt.dashArray='6,8';
+      const pl=L.polyline([[d.p1.lat,d.p1.lng],[d.p2.lat,d.p2.lng]],opt);pl.on('click',()=>editLength(o));o._group.addLayer(pl);
+      const dist=d.dist||map.distance(d.p1,d.p2).toFixed(1);const mid=[(d.p1.lat+d.p2.lat)/2,(d.p1.lng+d.p2.lng)/2];
+      const lm=L.marker(mid,{icon:L.divIcon({className:'',html:`<div class="marker-label red">${dist}m</div>`}),interactive:true});lm.on('click',()=>editLength(o));o._group.addLayer(lm);
     }else if(o.t==='bld'||o.t==='bldf'){
-      o._m=L.polygon(d.ps.map(p=>[p.lat,p.lng]),{color:o.t==='bldf'?'#2563eb':'#dc2626',weight:3,fillOpacity:0.14}).addTo(map);
+      o._group.addLayer(L.polygon(d.ps.map(p=>[p.lat,p.lng]),{color:o.t==='bldf'?'#2563eb':'#dc2626',weight:3,fillOpacity:0.14}));
     }else if(o.t==='text'){
-      o._m=L.marker([d.lat,d.lng],{icon:L.divIcon({className:'',html:`<div class="text-lab">${d.text}</div>`}),interactive:true}).addTo(map);
-      o._m.on('click',()=>editText(o));
+      const tm=L.marker([d.lat,d.lng],{icon:L.divIcon({className:'',html:`<div class="text-lab">${d.text}</div>`}),interactive:true});tm.on('click',()=>editText(o));o._group.addLayer(tm);
     }
   }
   
-  async function editObj(o){
-    if(state.tool!=='edit'&&o.t!=='pole'&&o.t!=='trans')return;
-    if(o.t==='pole'){
-      const res=await showModal('電柱編集',`<div class="row"><label>柱番号</label><input id="no" value="${o.d.no||''}" placeholder="名取12"></div>`);
-      if(res){o.d.no=res.no;render(o);save();show('更新')}
-    }else if(o.t==='trans'){
-      const caps=['','5kVA','10kVA','15kVA','20kVA','25kVA','30kVA','40kVA','50kVA','60kVA','75kVA'];
-      const res=await showModal('トランス編集',`<div class="row"><label>柱番号</label><input id="no" value="${o.d.no||''}"></div><div class="row"><label>容量</label><select id="cap">${caps.map(v=>`<option ${o.d.cap===v?'selected':''}>${v}</option>`).join('')}</select></div>`);
-      if(res){o.d.no=res.no;o.d.cap=res.cap;render(o);save();show('更新')}
-    }
-  }
-  async function editLength(o){if(state.tool!=='edit')return;const cur=o.d.dist||map.distance(o.d.p1,o.d.p2).toFixed(1);const res=await showModal('長さ修正',`<div class="row"><label>表示長さ (m)</label><input id="dist" type="number" step="0.1" value="${cur}"></div>`);if(res&&res.dist){o.d.dist=parseFloat(res.dist).toFixed(1);render(o);save();show('長さ更新')}}
-  async function editText(o){if(state.tool!=='edit')return;const res=await showModal('文字修正',`<div class="row"><label>文字</label><input id="text" value="${o.d.text}"></div>`);if(res&&res.text){o.d.text=res.text;render(o);save();show('更新')}}
+  async function editObj(o){if(state.tool!=='edit')return;pushHistory();if(o.t==='pole'){const r=await showModal('電柱編集',`<div class="row"><label>柱番号</label><input id="no" name="no" value="${o.d.no||''}"></div>`);if(r){o.d.no=r.no;render(o);requestSave()}}else if(o.t==='trans'){const caps=['','5kVA','10kVA','15kVA','20kVA','25kVA','30kVA','40kVA','50kVA','60kVA','75kVA'];const r=await showModal('トランス編集',`<div class="row"><label>柱番号</label><input id="no" name="no" value="${o.d.no||''}"></div><div class="row"><label>容量</label><select id="cap" name="cap">${caps.map(v=>`<option ${o.d.cap===v?'selected':''}>${v}</option>`).join('')}</select></div>`);if(r){o.d.no=r.no;o.d.cap=r.cap;render(o);requestSave()}}}
+  async function editLength(o){if(state.tool!=='edit')return;pushHistory();const cur=o.d.dist||map.distance(o.d.p1,o.d.p2).toFixed(1);const r=await showModal('長さ修正',`<div class="row"><label>m</label><input id="dist" name="dist" type="number" step="0.1" value="${cur}"></div>`);if(r&&r.dist){o.d.dist=parseFloat(r.dist).toFixed(1);render(o);requestSave()}}
+  async function editText(o){if(state.tool!=='edit')return;pushHistory();const r=await showModal('文字修正',`<div class="row"><label>文字</label><input id="text" name="text" value="${o.d.text}"></div>`);if(r&&r.text){o.d.text=r.text;render(o);requestSave()}}
   
-  function clearAll(){state.objs.forEach(o=>{if(o._m)map.removeLayer(o._m);if(o._l)map.removeLayer(o._l)});state.objs=[]}
+  function clearAll(){layerGroup.clearLayers();state.objs.forEach(o=>o._group=null);state.objs=[]}
   
-  map.on('click',async e=>{
-    if(!state.tool||state.tool==='edit')return;
-    const now=Date.now();if(now-state.last<140)return;state.last=now;const ll=e.latlng;
-    if(state.tool==='pole'){
-      const res=await showModal('電柱配置',`<div class="row"><label>柱番号</label><input id="no" placeholder="名取12" value="${$('hikikomi_basho').value||''}"></div>`);
-      if(!res)return;add('pole',{lat:ll.lat,lng:ll.lng,no:res.no});show('電柱')
-    }else if(state.tool==='trans'){
-      const caps=['','5kVA','10kVA','15kVA','20kVA','25kVA','30kVA','40kVA','50kVA','60kVA','75kVA'];
-      const res=await showModal('トランス配置',`<div class="row"><label>柱番号</label><input id="no" placeholder="名取15" value="${$('trans_basho').value||''}"></div><div class="row"><label>容量</label><select id="cap">${caps.map(v=>`<option ${$('trans_cap1').value===v?'selected':''}>${v}</option>`).join('')}</select></div>`);
-      if(!res)return;add('trans',{lat:ll.lat,lng:ll.lng,no:res.no,cap:res.cap});show('トランス')
-    }else if(state.tool==='line'){state.tmp.push(ll);if(state.tmp.length===2){add('line',{p1:state.tmp[0],p2:state.tmp[1]});state.tmp=[];show('低圧')}else show('終点')}
-    else if(state.tool==='hikikomi'){state.tmp.push(ll);if(state.tmp.length===2){const d=map.distance(state.tmp[0],state.tmp[1]).toFixed(1);add('hikikomi',{p1:state.tmp[0],p2:state.tmp[1],dist:d});state.tmp=[];show(`引込 ${d}m`)}else show('終点')}
-    else if(state.tool==='bunki'){state.tmp.push(ll);if(state.tmp.length===2){add('bunki',{p1:state.tmp[0],p2:state.tmp[1]});state.tmp=[];show('分岐')}else show('終点')}
-    else if(state.tool==='bld'){state.tmp.push(ll);if(state.tmp.length===2){const a=state.tmp[0],b=state.tmp[1];add('bld',{ps:[{lat:a.lat,lng:a.lng},{lat:a.lat,lng:b.lng},{lat:b.lat,lng:b.lng},{lat:b.lat,lng:a.lng}]});state.tmp=[];show('建物')}else show('対角')}
-    else if(state.tool==='bldf'){state.tmp.push(ll);const t=Date.now();show(`${state.tmp.length}点`);if(state.tmp.length>=3&&t-state.lastTap<400){add('bldf',{ps:state.tmp.map(p=>({lat:p.lat,lng:p.lng}))});state.tmp=[];show('自由形');state.lastTap=0;return}state.lastTap=t}
-    else if(state.tool==='text'){const res=await showModal('文字入力',`<div class="row"><label>文字</label><input id="text" placeholder="引込点"></div>`);if(!res||!res.text)return;add('text',{lat:ll.lat,lng:ll.lng,text:res.text});show('文字')}
+  map.on('click',async e=>{if(!state.tool||state.tool==='edit')return;const now=Date.now();if(now-state.last<140)return;state.last=now;const ll=e.latlng;
+    if(state.tool==='pole'){const r=await showModal('電柱','<div class="row"><label>柱番号</label><input id="no" name="no" value="'+($('hikikomi_basho').value||'')+'"></div>');if(!r)return;add('pole',{lat:ll.lat,lng:ll.lng,no:r.no})}
+    else if(state.tool==='trans'){const caps=['','5kVA','10kVA','15kVA','20kVA','25kVA','30kVA','40kVA','50kVA','60kVA','75kVA'];const r=await showModal('トランス','<div class="row"><label>柱番号</label><input id="no" name="no" value="'+($('trans_basho').value||'')+'"></div><div class="row"><label>容量</label><select id="cap" name="cap">'+caps.map(v=>'<option>'+v+'</option>').join('')+'</select></div>');if(!r)return;add('trans',{lat:ll.lat,lng:ll.lng,no:r.no,cap:r.cap})}
+    else if(state.tool==='line'){state.tmp.push(ll);if(state.tmp.length===2){add('line',{p1:state.tmp[0],p2:state.tmp[1]});state.tmp=[]}else show('終点')}
+    else if(state.tool==='hikikomi'){state.tmp.push(ll);if(state.tmp.length===2){const d=map.distance(state.tmp[0],state.tmp[1]).toFixed(1);add('hikikomi',{p1:state.tmp[0],p2:state.tmp[1],dist:d});state.tmp=[]}else show('終点')}
+    else if(state.tool==='bunki'){state.tmp.push(ll);if(state.tmp.length===2){add('bunki',{p1:state.tmp[0],p2:state.tmp[1]});state.tmp=[]}else show('終点')}
+    else if(state.tool==='bld'){state.tmp.push(ll);if(state.tmp.length===2){const a=state.tmp[0],b=state.tmp[1];add('bld',{ps:[{lat:a.lat,lng:a.lng},{lat:a.lat,lng:b.lng},{lat:b.lat,lng:b.lng},{lat:b.lat,lng:a.lng}]});state.tmp=[]}else show('対角')}
+    else if(state.tool==='bldf'){state.tmp.push(ll);show(state.tmp.length+'点');const btn=document.querySelector('[data-t="bldf"]');if(state.tmp.length>=3)btn.classList.add('ready')}
+    else if(state.tool==='text'){const r=await showModal('文字','<div class="row"><label>文字</label><input id="text" name="text"></div>');if(r&&r.text)add('text',{lat:ll.lat,lng:ll.lng,text:r.text})}
   });
   
-  document.querySelectorAll('#tools button').forEach(b=>b.addEventListener('click',()=>{state.tool=b.dataset.t;state.tmp=[];document.querySelectorAll('#tools button').forEach(x=>x.classList.remove('on'));b.classList.add('on');const n={pole:'電柱',trans:'トランス',line:'低圧',hikikomi:'引込',bunki:'分岐',bld:'建物',bldf:'自由形',text:'文字',edit:'編集'};show(n[state.tool]+(state.tool==='edit'?' - タップで修正':'') );vib(5)},{passive:true}));
+  document.querySelectorAll('#tools button').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.t==='bldf'&&state.tool==='bldf'&&state.tmp.length>=3){add('bldf',{ps:state.tmp.map(p=>({lat:p.lat,lng:p.lng}))});state.tmp=[];b.classList.remove('ready');return}state.tool=b.dataset.t;if(b.dataset.t!=='bldf')state.tmp=[];document.querySelectorAll('#tools button').forEach(x=>x.classList.remove('on'));b.classList.add('on')}));
   
-  $('gps').onclick=async()=>{const b=$('gps'),o=b.textContent;b.disabled=true;b.textContent='取得中';try{const p=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:20000,maximumAge:0}));const lat=p.coords.latitude,lng=p.coords.longitude;map.setView([lat,lng],19);show('GPS取得中...');try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=ja&zoom=18`);const d=await r.json();if(d&&d.address){const a=d.address;const parts=[a.state||'',a.city||a.town||a.village||'',a.suburb||a.neighbourhood||a.quarter||'',a.road||'',a.house_number||''].filter(Boolean);let addr=parts.join(' ').replace(/日本/g,'').trim();if(!addr&&d.display_name){addr=d.display_name.split(',').slice(0,4).reverse().join(' ').replace(/日本/g,'').trim()}$('jusho').value=addr;show('住所取得: '+addr);vib([10,30,10])}else{show('現在地表示');$('jusho').value=`${lat.toFixed(6)}, ${lng.toFixed(6)}`}}catch(e){show('現在地表示');$('jusho').value=`${lat.toFixed(6)}, ${lng.toFixed(6)}`}}catch(e){let m='GPSエラー';if(e.code===1)m='位置情報を許可してください';alert(m)}finally{b.disabled=false;b.textContent=o}};
+  $('gps').onclick=async()=>{try{const p=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:15000}));const lat=p.coords.latitude,lng=p.coords.longitude;map.setView([lat,lng],19);const key=lat.toFixed(5)+','+lng.toFixed(5);if(geoCache[key]){$('jusho').value=geoCache[key];return}const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=ja`);const d=await r.json();let addr='';if(d?.address){const a=d.address;addr=[a.state,a.city||a.town,a.suburb||'',a.road||''].filter(Boolean).join(' ')}if(!addr)addr=`${lat.toFixed(5)},${lng.toFixed(5)}`;geoCache[key]=addr;saveGeoCache();$('jusho').value=addr}catch(e){}};
   
-  function save(){try{const d={v:'36',f:{genba:$('genba').value,jusho:$('jusho').value,koji:getR('k'),kyokyu:$('kyokyu').value,keiyaku:$('keiyaku').value,amp:$('amp').value,dv:$('dv').value,sz:$('sz').value,hikikomi_basho:$('hikikomi_basho').value,trans_basho:$('trans_basho').value,trans_cap1:$('trans_cap1').value,trans_cap2:$('trans_cap2').value,mbox:getR('m'),hk:['h1','h2','h3'].filter(id=>$(id).checked),eq:['e1','e2','e3','e4','e5','e6'].filter(id=>$(id).checked),juten:$('juten').value,kensa:$('kensa').value,biko:$('biko').value},o:state.objs.map(o=>({t:o.t,d:o.d})),c:map.getCenter(),z:map.getZoom()};localStorage.setItem('dq36',JSON.stringify(d));return true}catch(e){return false}}
-  function load(){try{const s=localStorage.getItem('dq36')||localStorage.getItem('dq35');if(!s)return false;const d=JSON.parse(s),f=d.f||{};$('genba').value=f.genba||'';$('jusho').value=f.jusho||'';setR('k',f.koji||'本設');$('kyokyu').value=f.kyokyu||'単相3線式 100V/200V';$('keiyaku').value=f.keiyaku||'従量電灯B';$('amp').value=f.amp||'';$('dv').value=f.dv||'DV3線';$('sz').value=f.sz||'3.2mm';$('hikikomi_basho').value=f.hikikomi_basho||'';$('trans_basho').value=f.trans_basho||'';$('trans_cap1').value=f.trans_cap1||'';$('trans_cap2').value=f.trans_cap2||'';setR('m',f.mbox||'ベージュ');['h1','h2','h3'].forEach(id=>$(id).checked=(f.hk||[]).includes(id));['e1','e2','e3','e4','e5','e6'].forEach(id=>$(id).checked=(f.eq||[]).includes(id));$('juten').value=f.juten||'';$('kensa').value=f.kensa||'';$('biko').value=f.biko||'';if(d.c&&d.z)map.setView([d.c.lat,d.c.lng],d.z);clearAll();state.objs=[];state.undo=[];(d.o||[]).forEach(o=>{const no={t:o.t,d:o.d};state.objs.push(no);state.undo.push(no);render(no)});return true}catch(e){return false}}
+  // 改善1: debounce save
+  let saveTimer=null;
+  function doSave(){try{const c=map.getCenter();const d={v:'40',f:{genba:$('genba').value,jusho:$('jusho').value,koji:getR('k'),kyokyu:$('kyokyu').value,keiyaku:$('keiyaku').value,amp:$('amp').value,dv:$('dv').value,sz:$('sz').value,hikikomi_basho:$('hikikomi_basho').value,trans_basho:$('trans_basho').value,trans_cap1:$('trans_cap1').value,trans_cap2:$('trans_cap2').value,mbox:getR('m'),hk:['h1','h2','h3'].filter(id=>$(id).checked),eq:['e1','e2','e3','e4','e5','e6'].filter(id=>$(id).checked),juten:$('juten').value,kensa:$('kensa').value,biko:$('biko').value},o:state.objs.map(o=>({t:o.t,d:o.d,id:o.id})),c:{lat:c.lat,lng:c.lng},z:map.getZoom()};localStorage.setItem('dq40',JSON.stringify(d))}catch(e){}}
+  function requestSave(){clearTimeout(saveTimer);saveTimer=setTimeout(doSave,800)}
   
-  $('save').onclick=()=>{save();show('保存');vib(20)};
-  $('load').onclick=()=>{if(load()){show('読込');vib(20)}else alert('データなし')};
-  $('undo').onclick=()=>{if(!state.undo.length){show('戻せません');return}const l=state.undo.pop();state.objs=state.objs.filter(o=>o!==l);if(l._m)map.removeLayer(l._m);if(l._l)map.removeLayer(l._l);save();show('取消')};
-  $('clear').onclick=()=>{if(confirm('全削除?')){clearAll();state.undo=[];save();show('削除')}};
-  $('share').onclick=async()=>{const t=`${$('genba').value}
-${$('jusho').value}`;try{if(navigator.share)await navigator.share({text:t});else{await navigator.clipboard.writeText(t);show('コピー')}}catch(e){}};
+  function load(){try{const s=localStorage.getItem('dq40')||localStorage.getItem('dq39');if(!s)return;const d=JSON.parse(s),f=d.f||{};Object.entries({genba:f.genba,jusho:f.jusho,kyokyu:f.kyokyu,keiyaku:f.keiyaku,amp:f.amp,dv:f.dv,sz:f.sz,hikikomi_basho:f.hikikomi_basho,trans_basho:f.trans_basho,trans_cap1:f.trans_cap1,trans_cap2:f.trans_cap2,juten:f.juten,kensa:f.kensa,biko:f.biko}).forEach(([k,v])=>{if($(k))$(k).value=v||''});setR('k',f.koji);setR('m',f.mbox);['h1','h2','h3','e1','e2','e3','e4','e5','e6'].forEach(id=>{if($(id))$(id).checked=(f.hk||f.eq||[]).includes(id)});if(d.c)map.setView([d.c.lat,d.c.lng],d.z);clearAll();(d.o||[]).forEach(o=>{const no={t:o.t,d:o.d,id:o.id};state.objs.push(no);render(no)});pushHistory()}catch(e){}}
   
-  const sb=$('sb'),tg=$('tg'),fab=$('fab');
-  tg.onclick=()=>{const h=!sb.classList.contains('hide');sb.classList.toggle('hide',h);tg.textContent=h?'▲':'▼';localStorage.setItem('sb',h?'1':'0')};
-  fab.onclick=()=>{sb.classList.remove('hide');tg.textContent='▼'};
-  if(localStorage.getItem('sb')==='1'&&innerWidth<769){sb.classList.add('hide');tg.textContent='▲'}
+  $('save').onclick=()=>{doSave();show('保存')};
+  $('load').onclick=load;
+  $('undo').onclick=()=>{if(state.undo.length<2)return;state.undo.pop();const prev=JSON.parse(state.undo[state.undo.length-1]||'[]');clearAll();state.objs=[];prev.forEach(o=>{const no={t:o.t,d:o.d,id:o.id};state.objs.push(no);render(no)});requestSave()};
+  $('clear').onclick=()=>{if(confirm('全削除?')){pushHistory();clearAll();pushHistory();requestSave()}};
   
-  let st;document.querySelectorAll('input,select,textarea').forEach(e=>e.addEventListener('input',()=>{clearTimeout(st);st=setTimeout(save,800)}));
-  setInterval(save,25000);
-  window.addEventListener('load',()=>setTimeout(()=>{if(localStorage.getItem('dq36')){if(confirm('復元しますか'))load()}},600));
+  document.querySelectorAll('input,select,textarea').forEach(e=>e.addEventListener('input',requestSave));
+  setInterval(doSave,60000);
+  window.addEventListener('load',()=>setTimeout(load,500));
 }();
 </script>
 </body>
