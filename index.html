@@ -193,489 +193,338 @@
 <script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>電力申請用 位置図Pro v8</title>
+<title>電力申請用 位置図Pro v9</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",sans-serif;touch-action:manipulation}
-body{display:flex;flex-direction:column;background:#f3f4f6;color:#111827;overscroll-behavior:none}
-header{height:54px;background:#111827;color:#fff;display:flex;align-items:center;padding:0 10px;gap:6px;flex-shrink:0;z-index:2000}
-header h1{font-size:15px;margin:0 8px 0 0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
-header button{background:#374151;color:#fff;border:none;padding:7px 10px;border-radius:8px;font-size:13px;white-space:nowrap}
-header button:active{opacity:0.8}
-.app{flex:1;display:flex;min-height:0}
-aside{width:350px;background:#fff;border-right:1px solid #e5e7eb;padding:12px;overflow:auto;flex-shrink:0}
-main{flex:1;display:flex;flex-direction:column;min-width:0;background:#e5e7eb}
-label{font-size:12px;color:#4b5563;margin-top:10px;display:block;margin-bottom:4px}
-input,select,textarea{width:100%;padding:9px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;background:#fff}
-textarea{resize:vertical;min-height:60px}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.searchbox{display:flex;gap:6px;margin-top:4px}
-.searchbox button{padding:9px 12px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:14px;white-space:nowrap}
-#toolbar{background:#ffffff;border-bottom:1px solid #e5e7eb;padding:8px;display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;flex-shrink:0;-webkit-overflow-scrolling:touch}
-#toolbar::-webkit-scrollbar{display:none}
-#toolbar button{padding:10px 14px;border:1.5px solid #d1d5db;background:#fff;border-radius:10px;font-size:14px;white-space:nowrap;flex-shrink:0;font-weight:500}
-#toolbar button.active{background:#2563eb;color:#fff;border-color:#2563eb}
-#map-wrap{flex:1;position:relative}
-#map{position:absolute;inset:0}
-footer{height:30px;background:#111827;color:#9ca3af;font-size:12px;display:flex;align-items:center;padding:0 10px;gap:14px;flex-shrink:0}
-#coords{font-variant-numeric:tabular-nums}
-.leaflet-control-layers{font-size:13px}
-.compass{width:38px;height:38px;background:rgba(17,24,39,0.85);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);font-size:16px}
-.pole-icon, .hh-icon{background:transparent;border:none}
-.pole-wrap{display:flex;flex-direction:column;align-items:center;pointer-events:none}
-.pole-circle{width:26px;height:26px;border-radius:50%;background:#fff;border:3px solid #000;box-shadow:0 1px 3px rgba(0,0,0,0.3)}
-.hh-icon .pole-circle{border-color:#ea580c}
-.pole-label{margin-top:3px;background:rgba(255,255,255,0.95);padding:1px 5px;border-radius:4px;font-size:12px;color:#000;font-weight:700;line-height:1.2;white-space:nowrap;border:1px solid rgba(0,0,0,0.2);pointer-events:none}
-.map-text{background:rgba(255,255,255,0.95);padding:3px 7px;border:1.5px solid #374151;border-radius:6px;font-size:14px;white-space:nowrap;color:#111827;font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
-.dist-label div{background:#fff;padding:2px 6px;border:1.5px solid #dc2626;color:#dc2626;font-size:12px;font-weight:700;border-radius:4px;white-space:nowrap}
-.leaflet-marker-icon.leaflet-div-icon{background:transparent;border:none}
-.crosshair{cursor:crosshair !important}
-@media (max-width:900px){
-  .app{flex-direction:column}
-  aside{width:100%;height:auto;max-height:42vh;border-right:none;border-bottom:1px solid #e5e7eb}
-  header{height:auto;padding:8px;flex-wrap:wrap}
-  header h1{width:100%;margin-bottom:6px;font-size:14px}
-  #toolbar{padding:6px}
-  #toolbar button{padding:9px 12px;font-size:13px}
-}
+html,body{height:100%; overscroll-behavior:none; -webkit-tap-highlight-color:transparent}
+.leaflet-div-icon{background:transparent;border:0}
+.pole-dot{width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.pole-dot.black{border:3px solid #000}
+.pole-dot.red{border:3px solid #e60012}
+.pole-label{font-size:11px;font-weight:700;color:#111;text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff;white-space:nowrap;text-align:center;margin-top:2px;line-height:1}
+.text-marker div{font-weight:700;color:#e60012;font-size:14px;text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff;white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:85px;transform:translateX(-50%);background:#111;color:#fff;padding:9px 16px;border-radius:10px;font-size:13px;z-index:9999;opacity:0;transition:.25s;pointer-events:none}
+.toast.show{opacity:.95}
+button{touch-action:manipulation}
 </style>
 </head>
-<body>
-<header>
-  <h1>電力申請用 位置図Pro v8</h1>
-  <button id="btnGps">GPS現在地</button>
-  <button id="btnLine">LINE共有</button>
-  <button id="btnSave">保存</button>
-  <button id="btnLoad">読込</button>
-  <button id="btnUndo">戻る</button>
-  <button id="btnClear">全消し</button>
-  <button id="btnPng">PNG出力</button>
+<body class="bg-gray-100 text-gray-900 h-screen flex flex-col select-none">
+<header class="bg-white/95 backdrop-blur border-b sticky top-0 z-[1000]">
+  <div class="px-2 py-1.5 flex flex-wrap items-center gap-1.5">
+    <h1 class="font-bold text-[15px] sm:text-base mr-1 whitespace-nowrap">電力申請用 位置図Pro v9</h1>
+    <div class="flex flex-wrap gap-1">
+      <button id="btnGps" class="px-2.5 py-1.5 rounded-lg border bg-white text-xs sm:text-[13px] active:bg-gray-100">📍GPS</button>
+      <button id="btnLine" class="px-2.5 py-1.5 rounded-lg border bg-white text-xs sm:text-[13px] active:bg-gray-100">LINE</button>
+      <button id="btnSave" class="px-2.5 py-1.5 rounded-lg border bg-white text-xs sm:text-[13px] active:bg-gray-100">保存</button>
+      <button id="btnLoad" class="px-2.5 py-1.5 rounded-lg border bg-white text-xs sm:text-[13px] active:bg-gray-100">読込</button>
+      <button id="btnUndo" class="px-2.5 py-1.5 rounded-lg border bg-white text-xs sm:text-[13px] active:bg-gray-100">戻る</button>
+      <button id="btnClear" class="px-2.5 py-1.5 rounded-lg border bg-white text-xs sm:text-[13px] active:bg-gray-100">全消し</button>
+      <button id="btnPng" class="px-2.5 py-1.5 rounded-lg border bg-white text-xs sm:text-[13px] active:bg-gray-100">PNG</button>
+      <button id="btnToggleForm" class="px-2.5 py-1.5 rounded-lg border bg-blue-600 text-white text-xs sm:text-[13px]">フォーム</button>
+    </div>
+  </div>
 </header>
 
-<div class="app">
-  <aside>
-    <label>現場名</label>
-    <input id="genba" type="text" placeholder="〇邸新築工事">
-    
-    <label>住所</label>
-    <input id="jusho" type="text" placeholder="〇〇市〇〇町1-2-3">
-    
-    <div class="row2">
-      <div>
-        <label>工事種別</label>
-        <select id="koji"><option>本設</option><option>仮設</option></select>
-      </div>
-      <div>
-        <label>二類/三類</label>
-        <select id="kyu"><option>二類</option><option>三類</option></select>
+<main class="flex-1 flex overflow-hidden relative">
+  <!-- Map Area -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <div class="bg-white border-b px-1.5 py-1.5 flex flex-wrap gap-1 items-center">
+      <button data-tool="pole" class="tool px-3 py-1.5 rounded-lg border text-[13px] bg-white active:bg-gray-100"><span class="inline-block w-3 h-3 rounded-full border-2 border-black bg-white mr-1 align-middle"></span>電柱○</button>
+      <button data-tool="trans" class="tool px-3 py-1.5 rounded-lg border text-[13px] bg-white active:bg-gray-100"><span class="inline-block w-3 h-3 rounded-full border-2 border-[#e60012] bg-white mr-1 align-middle"></span>トランス○</button>
+      <button data-tool="lv" class="tool px-3 py-1.5 rounded-lg border text-[13px] bg-white active:bg-gray-100">低圧線</button>
+      <button data-tool="svc" class="tool px-3 py-1.5 rounded-lg border text-[13px] bg-white active:bg-gray-100">引込線</button>
+      <button data-tool="bld" class="tool px-3 py-1.5 rounded-lg border text-[13px] bg-white active:bg-gray-100">建物囲み</button>
+      <button data-tool="text" class="tool px-3 py-1.5 rounded-lg border text-[13px] bg-white active:bg-gray-100">テキスト</button>
+      <div class="ml-auto flex items-center gap-2">
+        <span id="scale" class="text-[11px] text-gray-500"></span>
+        <button id="btnLayer" class="px-2.5 py-1.5 rounded-lg border bg-white text-xs">🛰</button>
       </div>
     </div>
-    
-    <label>供給区分</label>
-    <input id="kyoku" type="text" placeholder="低圧・単相3線など">
-    
-    <div class="row2">
-      <div>
-        <label>外線種類</label>
-        <select id="gaiType"><option>OW</option><option>DV</option><option>CV</option><option>CVT</option><option>その他</option></select>
-      </div>
-      <div>
-        <label>外線太さ</label>
-        <select id="gaiSize"><option>2.0mm</option><option>2.6mm</option><option>3.2mm</option><option>5.0mm</option><option>8mm²</option><option>14mm²</option><option>22mm²</option><option>38mm²</option><option>60mm²</option><option>100mm²</option><option>その他</option></select>
-      </div>
+    <div id="map" class="flex-1 bg-gray-200"></div>
+  </div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="fixed md:static inset-y-0 right-0 w-[310px] max-w-[88vw] bg-white border-l shadow-xl md:shadow-none z-[2000] translate-x-full md:translate-x-0 transition-transform duration-300 flex flex-col">
+    <div class="h-12 flex items-center justify-between px-3 border-b shrink-0">
+      <span class="font-semibold text-sm">申請情報</span>
+      <button id="btnCloseForm" class="md:hidden px-2 py-1 text-xs border rounded">閉じる</button>
     </div>
-    
-    <div class="row2">
+    <div class="overflow-y-auto p-3 space-y-3 text-[13px] leading-5">
       <div>
-        <label>受点完成日</label>
-        <input id="juten" type="date">
+        <label class="block text-[11px] text-gray-600 mb-0.5">現場名</label>
+        <input id="fldSite" class="w-full border rounded-lg px-2.5 py-1.5" placeholder="〇〇邸新築">
       </div>
       <div>
-        <label>検査希望日</label>
-        <input id="kensa" type="date">
+        <label class="block text-[11px] text-gray-600 mb-0.5">住所（GPSで自動入力）</label>
+        <input id="fldAddr" class="w-full border rounded-lg px-2.5 py-1.5" placeholder="住所">
       </div>
-    </div>
-    
-    <label>メーターBOX色</label>
-    <select id="boxColor"><option>ベージュ</option><option>グレー</option><option>黒</option></select>
-    
-    <label>備考</label>
-    <textarea id="biko" placeholder="特記事項など"></textarea>
-    
-    <label>住所検索</label>
-    <div class="searchbox">
-      <input id="search" type="text" placeholder="住所や地名">
-      <button id="btnSearch">検索</button>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[11px] text-gray-600 mb-0.5">工事種別</label>
+          <select id="fldWork" class="w-full border rounded-lg px-2 py-1.5 bg-white">
+            <option>本設</option><option>仮設</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] text-gray-600 mb-0.5">二類/三類</label>
+          <select id="fldClass" class="w-full border rounded-lg px-2 py-1.5 bg-white">
+            <option>二類</option><option>三類</option>
+          </select>
+        </div>
+      <div>
+        <label class="block text-[11px] text-gray-600 mb-0.5">供給区分</label>
+        <input id="fldSupply" class="w-full border rounded-lg px-2.5 py-1.5" placeholder="単相3線 60A など">
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[11px] text-gray-600 mb-0.5">外線種類</label>
+          <select id="fldWireType" class="w-full border rounded-lg px-2 py-1.5 bg-white">
+            <option>OW</option><option>DV</option><option>CV</option><option>CVT</option><option>その他</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] text-gray-600 mb-0.5">外線太さ</label>
+          <select id="fldWireSize" class="w-full border rounded-lg px-2 py-1.5 bg-white">
+            <option>2.0mm</option><option>2.6mm</option><option>3.2mm</option><option>5.0mm</option><option>8mm²</option><option>14mm²</option><option>22mm²</option><option>38mm²</option><option>60mm²</option><option>100mm²</option><option>その他</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-[11px] text-gray-600 mb-0.5">受点完成日</label>
+          <input id="fldComplete" type="date" class="w-full border rounded-lg px-2 py-1.5">
+        </div>
+        <div>
+          <label class="block text-[11px] text-gray-600 mb-0.5">検査希望日</label>
+          <input id="fldInspect" type="date" class="w-full border rounded-lg px-2 py-1.5">
+        </div>
+      </div>
+      <div>
+        <label class="block text-[11px] text-gray-600 mb-0.5">メーターBOX色</label>
+        <select id="fldMeter" class="w-full border rounded-lg px-2 py-1.5 bg-white">
+          <option>ベージュ</option><option>グレー</option><option>黒</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[11px] text-gray-600 mb-0.5">備考</label>
+        <textarea id="fldNote" rows="3" class="w-full border rounded-lg px-2.5 py-1.5" placeholder="特記事項"></textarea>
+      </div>
+      <div class="pt-2 border-t">
+        <label class="block text-[11px] text-gray-600 mb-0.5">住所検索</label>
+        <div class="flex gap-1.5">
+          <input id="searchAddr" class="flex-1 border rounded-lg px-2.5 py-1.5" placeholder="地名・住所">
+          <button id="btnSearch" class="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs">検索</button>
+        </div>
+        <p class="text-[10px] text-gray-500 mt-1">GPSで住所自動入力します。検索でも補正可。</p>
+      </div>
     </div>
   </aside>
-  
-  <main>
-    <div id="toolbar">
-      <button data-mode="pole">電柱◯</button>
-      <button data-mode="hh">ハンドホール◯</button>
-      <button data-mode="lvline">低圧線</button>
-      <button data-mode="svc">引込線</button>
-      <button data-mode="bldg">建物囲み</button>
-      <button data-mode="text">テキスト</button>
-    </div>
-    <div id="map-wrap">
-      <div id="map"></div>
-    </div>
-  </main>
-</div>
+  <div id="overlay" class="fixed inset-0 bg-black/30 z-[1500] hidden md:hidden"></div>
+</main>
 
-<footer>
-  <span id="status">準備完了</span>
-  <span id="coords"></span>
-</footer>
+<div id="toast" class="toast"></div>
 
 <script>
-const map = L.map('map', {
-  zoomControl: true,
-  doubleClickZoom: false,
-  maxZoom: 20
-}).setView([35.6812, 139.7671], 16);
+const $ = s=>document.querySelector(s);
+const toast = (m)=>{ const t=$('#toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); };
 
-const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap',
-  crossOrigin: true,
-  maxZoom: 20
-}).addTo(map);
-
-const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-  attribution: '© Esri',
-  crossOrigin: true,
-  maxZoom: 20
-});
-
-L.control.layers({"地図": osm, "衛星": sat}, null, {position: 'topright'}).addTo(map);
-
-const Compass = L.Control.extend({
-  onAdd: function() {
-    const d = L.DomUtil.create('div', 'compass');
-    d.title = '北';
-    d.innerHTML = 'N';
-    return d;
-  }
-});
-new Compass({position: 'topright'}).addTo(map);
+// Map
+const map = L.map('map',{zoomControl:false,doubleClickZoom:false}).setView([35.681,139.767],17);
+L.control.zoom({position:'bottomright'}).addTo(map);
+const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:20,attribution:'©OpenStreetMap'}).addTo(map);
+const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,attribution:'©Esri'});
+let base='osm';
+$('#btnLayer').onclick=()=>{ if(base==='osm'){map.removeLayer(osm);sat.addTo(map);base='sat';}else{map.removeLayer(sat);osm.addTo(map);base='osm';} };
 
 const drawn = L.featureGroup().addTo(map);
-let history = [];
-let mode = null;
-let temp = { line: null, points: [], start: null };
+let historyStack=[]; let currentTool=null; let drawing=null;
 
-const statusEl = document.getElementById('status');
-const coordsEl = document.getElementById('coords');
+function updateScale(){ const c=map.getCenter(); const mpp=156543.03392*Math.cos(c.lat*Math.PI/180)/Math.pow(2,map.getZoom()); $('#scale').textContent=`1px≈${mpp.toFixed(2)}m`; }
+map.on('zoomend moveend',updateScale); updateScale();
 
-function setStatus(t){ statusEl.textContent = t; }
-function setMode(m){
-  mode = m;
-  document.querySelectorAll('#toolbar button').forEach(b=>{
-    b.classList.toggle('active', b.dataset.mode === m);
+function setTool(t){
+  if(currentTool===t){ currentTool=null; } else { currentTool=t; }
+  if(drawing && drawing.type==='lv'){ finishLv(); }
+  document.querySelectorAll('.tool').forEach(b=>{
+    const on=b.dataset.tool===currentTool;
+    b.classList.toggle('bg-blue-600',on);
+    b.classList.toggle('text-white',on);
+    b.classList.toggle('border-blue-600',on);
   });
-  map.getContainer().classList.toggle('crosshair', !!m);
-  if(m === 'lvline'){ map.doubleClickZoom.disable(); } else { map.doubleClickZoom.enable(); }
-  temp.line = null; temp.points = []; temp.start = null;
-  const names = {pole:'電柱を配置', hh:'ハンドホールを配置', lvline:'低圧線:クリックで追加、ダブルクリックで完了', svc:'引込線:始点→終点', bldg:'建物:対角2点', text:'テキストを配置'};
-  setStatus(m ? names[m] || '' : '準備完了');
+  map.getContainer().style.cursor = currentTool?'crosshair':'';
+  if(currentTool==='lv') toast('低圧線: タップで追加。もう一度ボタンで終了');
+  if(currentTool==='svc') toast('引込線: 始点→終点の順にタップ');
+  if(currentTool==='bld') toast('建物囲み: 対角2点をタップ');
+}
+document.querySelectorAll('.tool').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
+
+function poleIcon(type,label){
+  const cls = type==='trans'?'red':'black';
+  const html = `<div style="display:flex;flex-direction:column;align-items:center;transform:translateY(-6px)"><div class="pole-dot ${cls}"></div><div class="pole-label">${label||''}</div></div>`;
+  return L.divIcon({html,className:'leaflet-div-icon',iconSize:[30,34],iconAnchor:[15,13]});
+}
+function addPole(latlng,type){
+  const isT = type==='trans';
+  const cnt = drawn.getLayers().filter(l=>l._ptype===type).length+1;
+  const def = (isT?'T':'P')+cnt;
+  const label = prompt(isT?'トランス番号':'電柱番号', def);
+  if(label===null) return;
+  const m = L.marker(latlng,{draggable:true,icon:poleIcon(type,label),autoPan:true});
+  m._ptype=type; m._label=label;
+  m.on('click',()=>{ if(currentTool) return; const nl=prompt('名称変更',m._label); if(nl!==null){m._label=nl; m.setIcon(poleIcon(type,nl));}});
+  drawn.addLayer(m); historyStack.push({act:'add',layer:m});
+}
+function finishLv(){
+  if(drawing && drawing.type==='lv'){
+    if(drawing.layer.getLatLngs().length<2){ drawn.removeLayer(drawing.layer); }
+    else{ historyStack.push({act:'add',layer:drawing.layer}); }
+  }
+  drawing=null;
+}
+function addLvPoint(latlng){
+  if(!drawing || drawing.type!=='lv'){
+    const line = L.polyline([latlng],{color:'#000',weight:3});
+    line.addTo(drawn);
+    drawing={type:'lv',layer:line};
+  }else{
+    drawing.layer.addLatLng(latlng);
+  }
+}
+function addSvc(latlng){
+  if(!drawing || drawing.type!=='svc'){ drawing={type:'svc',p1:latlng}; toast('終点をタップ'); return; }
+  const p2=latlng;
+  const line = L.polyline([drawing.p1,p2],{color:'#e60012',weight:3});
+  line.addTo(drawn);
+  const d = map.distance(drawing.p1,p2);
+  const mid = L.latLng((drawing.p1.lat+p2.lat)/2,(drawing.p1.lng+p2.lng)/2);
+  const txt = L.marker(mid,{icon:L.divIcon({className:'text-marker',html:`<div>${d.toFixed(1)}m</div>`,iconSize:[70,18],iconAnchor:[35,9]}),interactive:false});
+  txt.addTo(drawn);
+  historyStack.push({act:'add',layer:line}); historyStack.push({act:'add',layer:txt});
+  drawing=null; toast('引込線を作成');
+}
+function addBld(latlng){
+  if(!drawing || drawing.type!=='bld'){ drawing={type:'bld',p1:latlng}; toast('対角点をタップ'); return; }
+  const rect = L.rectangle(L.latLngBounds(drawing.p1,latlng),{color:'#2563eb',weight:2,fillOpacity:0.08});
+  rect.addTo(drawn); historyStack.push({act:'add',layer:rect}); drawing=null;
+}
+function addText(latlng){
+  const t = prompt('テキスト入力'); if(!t) return;
+  const m = L.marker(latlng,{icon:L.divIcon({className:'text-marker',html:`<div>${t}</div>`,iconSize:[100,20],iconAnchor:[50,10]}),draggable:true});
+  m._isText=true; drawn.addLayer(m); historyStack.push({act:'add',layer:m});
 }
 
-document.getElementById('toolbar').addEventListener('click', e=>{
-  const btn = e.target.closest('button');
-  if(!btn) return;
-  const m = btn.dataset.mode;
-  setMode(mode === m ? null : m);
+map.on('click',e=>{
+  if(!currentTool) return;
+  const ll=e.latlng;
+  if(currentTool==='pole') addPole(ll,'pole');
+  else if(currentTool==='trans') addPole(ll,'trans');
+  else if(currentTool==='lv') addLvPoint(ll);
+  else if(currentTool==='svc') addSvc(ll);
+  else if(currentTool==='bld') addBld(ll);
+  else if(currentTool==='text') addText(ll);
 });
 
-function addHistory(layer){
-  history.push(layer);
-}
-
-function makePole(latlng, label, kind='pole'){
-  const isHH = kind === 'hh';
-  const html = `<div class="pole-wrap"><div class="pole-circle"></div><div class="pole-label">${label||''}</div></div>`;
-  const icon = L.divIcon({className: isHH ? 'hh-icon' : 'pole-icon', html: html, iconSize:[30,40], iconAnchor:[15,15]});
-  const m = L.marker(latlng, {draggable:true, icon: icon});
-  m.options.kind = kind;
-  m.options.label = label || '';
-  m.feature = {type:'Feature', properties:{kind: kind, label: label||''}};
-  m.on('dblclick', ()=>{
-    const nv = prompt(isHH ? 'ハンドホール名' : '電柱番号', m.options.label);
-    if(nv !== null){
-      m.options.label = nv;
-      m.feature.properties.label = nv;
-      m.setIcon(L.divIcon({className: isHH ? 'hh-icon' : 'pole-icon', html: `<div class="pole-wrap"><div class="pole-circle"></div><div class="pole-label">${nv}</div></div>`, iconSize:[30,40], iconAnchor:[15,15]}));
-    }
-  });
-  return m;
-}
-
-function makeText(latlng, txt){
-  const icon = L.divIcon({className:'', html:`<div class="map-text">${txt}</div>`, iconSize:[10,10]});
-  const m = L.marker(latlng, {draggable:true, icon:icon});
-  m.options.kind = 'text';
-  m.options.label = txt;
-  m.feature = {type:'Feature', properties:{kind:'text', label:txt}};
-  m.on('dblclick', ()=>{
-    const nv = prompt('テキスト編集', m.options.label);
-    if(nv !== null){
-      m.options.label = nv;
-      m.feature.properties.label = nv;
-      m.setIcon(L.divIcon({className:'', html:`<div class="map-text">${nv}</div>`}));
-    }
-  });
-  return m;
-}
-
-map.on('click', e=>{
-  if(!mode) return;
-  
-  if(mode === 'pole'){
-    const num = prompt('電柱番号を入力');
-    if(num === null){ setMode(null); return; }
-    const m = makePole(e.latlng, num, 'pole');
-    drawn.addLayer(m);
-    addHistory(m);
-    setMode(null);
-  } else if(mode === 'hh'){
-    const num = prompt('ハンドホール名を入力');
-    if(num === null){ setMode(null); return; }
-    const m = makePole(e.latlng, num, 'hh');
-    drawn.addLayer(m);
-    addHistory(m);
-    setMode(null);
-  } else if(mode === 'text'){
-    const txt = prompt('テキストを入力');
-    if(txt === null || txt === ''){ setMode(null); return; }
-    const m = makeText(e.latlng, txt);
-    drawn.addLayer(m);
-    addHistory(m);
-    setMode(null);
-  } else if(mode === 'lvline'){
-    if(!temp.line){
-      temp.points = [e.latlng];
-      temp.line = L.polyline(temp.points, {color:'#000', weight:4, opacity:0.9}).addTo(drawn);
-    } else {
-      temp.points.push(e.latlng);
-      temp.line.setLatLngs(temp.points);
-    }
-  } else if(mode === 'svc'){
-    if(!temp.start){
-      temp.start = e.latlng;
-      setStatus('引込線:終点をクリック');
-    } else {
-      const line = L.polyline([temp.start, e.latlng], {color:'#dc2626', weight:4}).addTo(drawn);
-      line.feature = {type:'Feature', properties:{kind:'svc'}};
-      const dist = map.distance(temp.start, e.latlng);
-      const mid = L.latLng((temp.start.lat + e.latlng.lat)/2, (temp.start.lng + e.latlng.lng)/2);
-      const label = L.marker(mid, {
-        icon: L.divIcon({className:'dist-label', html:`<div>${dist.toFixed(1)}m</div>`}),
-        interactive:false
-      }).addTo(drawn);
-      label.feature = {type:'Feature', properties:{kind:'dist', label:dist.toFixed(1)+'m'}};
-      addHistory(line);
-      addHistory(label);
-      temp.start = null;
-      setMode(null);
-    }
-  } else if(mode === 'bldg'){
-    if(!temp.start){
-      temp.start = e.latlng;
-      setStatus('建物:対角点をクリック');
-    } else {
-      const bounds = L.latLngBounds(temp.start, e.latlng);
-      const rect = L.rectangle(bounds, {color:'#2563eb', weight:2.5, fillOpacity:0.08}).addTo(drawn);
-      rect.feature = {type:'Feature', properties:{kind:'bldg'}};
-      addHistory(rect);
-      temp.start = null;
-      setMode(null);
-    }
-  }
-});
-
-map.on('dblclick', e=>{
-  if(mode === 'lvline' && temp.line && temp.points.length >= 2){
-    temp.line.feature = {type:'Feature', properties:{kind:'lvline'}};
-    addHistory(temp.line);
-    temp.line = null;
-    temp.points = [];
-    setMode(null);
-  }
-});
-
-map.on('mousemove', e=>{
-  coordsEl.textContent = `${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}  Z${map.getZoom()}`;
-});
-
-let gpsMarker = null;
-document.getElementById('btnGps').onclick = ()=>{
-  if(!navigator.geolocation){ alert('GPS非対応'); return; }
-  setStatus('GPS測位中...');
-  navigator.geolocation.getCurrentPosition(p=>{
-    const ll = [p.coords.latitude, p.coords.longitude];
-    map.setView(ll, 18);
-    if(gpsMarker) drawn.removeLayer(gpsMarker);
-    gpsMarker = L.circleMarker(ll, {radius:8, color:'#2563eb', fillColor:'#3b82f6', fillOpacity:0.9, weight:2}).addTo(drawn);
-    setStatus(`GPS精度±${Math.round(p.coords.accuracy)}m`);
-  }, err=>{
-    alert('GPS取得失敗: ' + err.message);
-    setStatus('GPS失敗');
-  }, {enableHighAccuracy:true, timeout:10000});
-};
-
-document.getElementById('btnUndo').onclick = ()=>{
-  const last = history.pop();
-  if(last){ drawn.removeLayer(last); setStatus('1つ戻しました'); }
-};
-document.getElementById('btnClear').onclick = ()=>{
-  if(confirm('全ての作図を削除しますか？')){
-    drawn.clearLayers();
-    history = [];
-    gpsMarker = null;
-    setStatus('全消去');
-  }
-};
-
-function getForm(){
-  return {
-    genba: document.getElementById('genba').value,
-    jusho: document.getElementById('jusho').value,
-    koji: document.getElementById('koji').value,
-    kyu: document.getElementById('kyu').value,
-    kyoku: document.getElementById('kyoku').value,
-    gaiType: document.getElementById('gaiType').value,
-    gaiSize: document.getElementById('gaiSize').value,
-    juten: document.getElementById('juten').value,
-    kensa: document.getElementById('kensa').value,
-    boxColor: document.getElementById('boxColor').value,
-    biko: document.getElementById('biko').value,
-    center: map.getCenter(),
-    zoom: map.getZoom()
-  };
-}
-function setForm(d){
-  if(!d) return;
-  document.getElementById('genba').value = d.genba||'';
-  document.getElementById('jusho').value = d.jusho||'';
-  document.getElementById('koji').value = d.koji||'本設';
-  document.getElementById('kyu').value = d.kyu||'二類';
-  document.getElementById('kyoku').value = d.kyoku||'';
-  document.getElementById('gaiType').value = d.gaiType||'OW';
-  document.getElementById('gaiSize').value = d.gaiSize||'2.0mm';
-  document.getElementById('juten').value = d.juten||'';
-  document.getElementById('kensa').value = d.kensa||'';
-  document.getElementById('boxColor').value = d.boxColor||'ベージュ';
-  document.getElementById('biko').value = d.biko||'';
-  if(d.center && d.zoom) map.setView([d.center.lat, d.center.lng], d.zoom);
-}
-
-document.getElementById('btnSave').onclick = ()=>{
-  const data = {
-    form: getForm(),
-    geo: drawn.toGeoJSON()
-  };
-  localStorage.setItem('denryoku_v8', JSON.stringify(data));
-  setStatus('保存しました');
-  alert('保存しました');
-};
-document.getElementById('btnLoad').onclick = ()=>{
-  const s = localStorage.getItem('denryoku_v8');
-  if(!s){ alert('保存データなし'); return; }
-  try{
-    const data = JSON.parse(s);
-    setForm(data.form);
-    drawn.clearLayers();
-    history = [];
-    L.geoJSON(data.geo, {
-      pointToLayer: (f, ll)=>{
-        const p = f.properties||{};
-        if(p.kind === 'pole' || p.kind === 'hh') return makePole(ll, p.label, p.kind);
-        if(p.kind === 'text') return makeText(ll, p.label);
-        if(p.kind === 'dist') return L.marker(ll, {icon:L.divIcon({className:'dist-label', html:`<div>${p.label}</div>`}), interactive:false});
-        return L.marker(ll);
-      },
-      style: (f)=>{
-        const k = f.properties?.kind;
-        if(k === 'lvline') return {color:'#000', weight:4};
-        if(k === 'svc') return {color:'#dc2626', weight:4};
-        if(k === 'bldg') return {color:'#2563eb', weight:2.5, fillOpacity:0.08};
-        return {};
-      },
-      onEachFeature: (f,l)=>{ drawn.addLayer(l); history.push(l); }
-    });
-    setStatus('読込完了');
-  }catch(e){ alert('読込失敗'); }
-};
-
-document.getElementById('btnLine').onclick = ()=>{
-  const f = getForm();
-  const lines = [
-    '【電力申請 位置図】',
-    `現場名: ${f.genba}`,
-    `住所: ${f.jusho}`,
-    `工事種別: ${f.koji} / ${f.kyu}`,
-    `供給区分: ${f.kyoku}`,
-    `外線: ${f.gaiType} ${f.gaiSize}`,
-    `受点完成: ${f.juten}  検査希望: ${f.kensa}`,
-    `メーターBOX: ${f.boxColor}`,
-    f.biko ? `備考: ${f.biko}` : '',
-    `地図: https://maps.google.com/?q=${map.getCenter().lat.toFixed(6)},${map.getCenter().lng.toFixed(6)}`
-  ].filter(Boolean).join('\n');
-  const url = 'https://line.me/R/msg/text/?' + encodeURIComponent(lines);
-  window.open(url, '_blank');
-};
-
-document.getElementById('btnPng').onclick = async ()=>{
-  setStatus('PNG生成中...');
-  try{
-    const canvas = await html2canvas(document.getElementById('map'), {useCORS:true, allowTaint:true, backgroundColor:null, scale:2});
-    const a = document.createElement('a');
-    a.href = canvas.toDataURL('image/png');
-    const name = (document.getElementById('genba').value || '位置図') + '_v8.png';
-    a.download = name;
-    a.click();
-    setStatus('PNG出力完了');
-  }catch(e){
-    alert('PNG出力に失敗しました');
-    setStatus('PNG失敗');
-  }
-};
-
-document.getElementById('btnSearch').onclick = async ()=>{
-  const q = document.getElementById('search').value.trim();
-  if(!q) return;
-  setStatus('検索中...');
-  try{
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=jp&limit=1`);
-    const data = await res.json();
-    if(data && data[0]){
-      map.setView([+data[0].lat, +data[0].lon], 18);
-      setStatus('検索完了');
-    }else{
-      setStatus('見つかりません');
-      alert('見つかりませんでした');
-    }
-  }catch(e){
-    setStatus('検索エラー');
-  }
-};
-
-// 初期ロード
-(function(){
-  const s = localStorage.getItem('denryoku_v8');
-  if(s){
+// GPS with reverse geocode
+$('#btnGps').onclick=()=>{
+  if(!navigator.geolocation){ toast('GPS未対応'); return; }
+  toast('GPS取得中...');
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    const {latitude:lat,longitude:lon}=pos.coords;
+    map.setView([lat,lon],19);
+    L.circle([lat,lon],{radius:pos.coords.accuracy/2,color:'#3b82f6',weight:1,fillOpacity:0.15}).addTo(drawn);
     try{
-      const d = JSON.parse(s);
-      setForm(d.form);
-    }catch{}
-  }
-  setTimeout(()=>map.invalidateSize(), 300);
-})();
-window.addEventListener('resize', ()=>map.invalidateSize());
+      const url=`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=ja&zoom=18&addressdetails=1`;
+      const r=await fetch(url,{headers:{'Accept':'application/json'}});
+      const j=await r.json();
+      const addr = j.display_name || (j.address?Object.values(j.address).reverse().join(' '):'');
+      $('#fldAddr').value = addr.replace(/日本、?/, '');
+      toast('住所を自動入力しました');
+    }catch(e){ toast('住所取得失敗'); }
+  }, err=>toast('GPSエラー'),{enableHighAccuracy:true,timeout:10000});
+};
+
+// Search
+$('#btnSearch').onclick=async()=>{
+  const q=$('#searchAddr').value.trim(); if(!q) return;
+  try{
+    const url=`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=jp&limit=1&accept-language=ja`;
+    const r=await fetch(url); const js=await r.json();
+    if(js[0]){ const {lat,lon,display_name}=js[0]; map.setView([lat,lon],19); $('#fldAddr').value=display_name.replace(/日本、?/,''); toast('移動しました'); }
+    else toast('見つかりません');
+  }catch{ toast('検索失敗'); }
+};
+
+// Undo / Clear
+$('#btnUndo').onclick=()=>{
+  finishLv();
+  const h = historyStack.pop();
+  if(h && h.layer){ drawn.removeLayer(h.layer); toast('戻しました'); }
+};
+$('#btnClear').onclick=()=>{ if(confirm('全て削除しますか？')){ drawn.clearLayers(); historyStack=[]; drawing=null; toast('全消去'); } };
+
+// Save / Load
+function collectForm(){ return { site:$('#fldSite').value, addr:$('#fldAddr').value, work:$('#fldWork').value, cls:$('#fldClass').value, supply:$('#fldSupply').value, wireT:$('#fldWireType').value, wireS:$('#fldWireSize').value, comp:$('#fldComplete').value, insp:$('#fldInspect').value, meter:$('#fldMeter').value, note:$('#fldNote').value }; }
+function applyForm(f){ $('#fldSite').value=f.site||''; $('#fldAddr').value=f.addr||''; $('#fldWork').value=f.work||'本設'; $('#fldClass').value=f.cls||'二類'; $('#fldSupply').value=f.supply||''; $('#fldWireType').value=f.wireT||'OW'; $('#fldWireSize').value=f.wireS||'2.0mm'; $('#fldComplete').value=f.comp||''; $('#fldInspect').value=f.insp||''; $('#fldMeter').value=f.meter||'ベージュ'; $('#fldNote').value=f.note||''; }
+function serialize(){
+  const feats=[];
+  drawn.eachLayer(l=>{
+    if(l._ptype){ feats.push({t:l._ptype,lat:l.getLatLng().lat,lng:l.getLatLng().lng,lab:l._label}); }
+    else if(l instanceof L.Polyline && !(l instanceof L.Rectangle)){ feats.push({t:'poly',color:l.options.color,pts:l.getLatLngs().map(p=>[p.lat,p.lng])}); }
+    else if(l instanceof L.Rectangle){ const b=l.getBounds(); feats.push({t:'rect',b:[[b.getSouth(),b.getWest()],[b.getNorth(),b.getEast()]]}); }
+    else if(l._isText || (l.options && l.options.icon && l.options.icon.options.className==='text-marker' && l.options.draggable)){ const txt=l.options.icon.options.html.replace(/<[^>]+>/g,''); feats.push({t:'text',lat:l.getLatLng().lat,lng:l.getLatLng().lng,txt}); }
+    else if(l.options && l.options.icon.options.className==='text-marker'){ const txt=l.options.icon.options.html.replace(/<[^>]+>/g,''); feats.push({t:'mlabel',lat:l.getLatLng().lat,lng:l.getLatLng().lng,txt}); }
+  });
+  return {v:9,form:collectForm(),feats,center:map.getCenter(),zoom:map.getZoom()};
+}
+function deserialize(d){
+  drawn.clearLayers(); historyStack=[];
+  applyForm(d.form||{});
+  (d.feats||[]).forEach(f=>{
+    if(f.t==='pole'||f.t==='trans'){ const m=L.marker([f.lat,f.lng],{draggable:true,icon:poleIcon(f.t,f.lab)}); m._ptype=f.t; m._label=f.lab; m.on('click',()=>{ if(currentTool) return; const nl=prompt('名称変更',m._label); if(nl!==null){m._label=nl; m.setIcon(poleIcon(f.t,nl));}}); drawn.addLayer(m); }
+    else if(f.t==='poly'){ const p=L.polyline(f.pts,{color:f.color||'#000',weight:3}); drawn.addLayer(p); }
+    else if(f.t==='rect'){ const r=L.rectangle(f.b,{color:'#2563eb',weight:2,fillOpacity:0.08}); drawn.addLayer(r); }
+    else if(f.t==='text'){ const m=L.marker([f.lat,f.lng],{draggable:true,icon:L.divIcon({className:'text-marker',html:`<div>${f.txt}</div>`,iconSize:[100,20],iconAnchor:[50,10]})}); m._isText=true; drawn.addLayer(m); }
+    else if(f.t==='mlabel'){ const m=L.marker([f.lat,f.lng],{icon:L.divIcon({className:'text-marker',html:`<div>${f.txt}</div>`,iconSize:[70,18],iconAnchor:[35,9]}),interactive:false}); drawn.addLayer(m); }
+  });
+  if(d.center) map.setView(d.center,d.zoom||17);
+}
+$('#btnSave').onclick=()=>{ localStorage.setItem('posizu_v9',JSON.stringify(serialize())); toast('保存しました'); };
+$('#btnLoad').onclick=()=>{ const s=localStorage.getItem('posizu_v9'); if(!s){toast('保存データなし');return;} try{deserialize(JSON.parse(s)); toast('読込完了');}catch{toast('読込失敗');} };
+
+// PNG
+$('#btnPng').onclick=async()=>{
+  toast('画像作成中...');
+  try{
+    const el=$('#map');
+    const canvas=await html2canvas(el,{useCORS:true,allowTaint:false,logging:false,backgroundColor:'#fff',scale:2});
+    const a=document.createElement('a');
+    a.href=canvas.toDataURL('image/png');
+    const name = ($('#fldSite').value||'位置図').replace(/[\\/:*?"<>|]/g,'_');
+    a.download=`${name}.png`; a.click(); toast('PNG保存');
+  }catch(e){ toast('PNG作成失敗'); }
+};
+
+// LINE
+$('#btnLine').onclick=()=>{
+  const f=collectForm();
+  const txt=[`【位置図】${f.site||''}`,`住所:${f.addr||''}`,`工事:${f.work}/${f.cls}`,`供給:${f.supply}`,`外線:${f.wireT} ${f.wireS}`,`受点:${f.comp} 検査:${f.insp}`,`メーター:${f.meter}`,f.note?`備考:${f.note}`:''].filter(Boolean).join('\n');
+  window.open('https://line.me/R/msg/text/?'+encodeURIComponent(txt),'_blank');
+};
+
+// Sidebar toggle
+const sidebar=$('#sidebar'), overlay=$('#overlay');
+function openForm(on){ const show = on!==undefined?on:sidebar.classList.contains('translate-x-full'); sidebar.classList.toggle('translate-x-full',!show); overlay.classList.toggle('hidden',!show); setTimeout(()=>map.invalidateSize(),300); }
+$('#btnToggleForm').onclick=()=>openForm();
+$('#btnCloseForm').onclick=()=>openForm(false);
+overlay.onclick=()=>openForm(false);
+// Default: desktop show, mobile hide
+if(window.innerWidth>=768){ openForm(true); } else { openForm(false); }
+
+// Auto load last
+window.addEventListener('load',()=>{ const s=localStorage.getItem('posizu_v9'); if(s){ try{deserialize(JSON.parse(s));}catch{} } });
 </script>
 </body>
 </html>
