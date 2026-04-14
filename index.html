@@ -192,86 +192,147 @@
 })();</script>
 <script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
 <meta charset="UTF-8">
-<title>電力申請 v40</title>
+<title>電力申請 v43.1</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
-body{background:#fff;overscroll-behavior:none}
-button,input,select,textarea{font-family:inherit;font-size:16px}
-button{cursor:pointer;-webkit-user-select:none;user-select:none;touch-action:manipulation}
-.app{display:flex;height:100vh;height:100dvh;width:100vw}
-.sidebar{width:310px;background:#fff;display:flex;flex-direction:column;z-index:1000;box-shadow:2px 0 12px rgba(0,0,0,0.15);transition:transform .25s}
-.sidebar.hide{transform:translateX(-100%)}
-@media(max-width:768px){.sidebar{position:absolute;inset:0;top:auto;height:66vh;max-width:100%;border-radius:16px 16px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,0.25);z-index:2000}.sidebar.hide{transform:translateY(100%)}}
-.head{background:#1e3a8a;color:#fff;padding:10px;padding-top:calc(10px + env(safe-area-inset-top))}
-.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.top h1{font-size:15px;font-weight:700}
-.tg{width:32px;height:32px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:6px;color:#fff;font-size:16px}
-.btns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.btns button{height:36px;background:#fff;color:#1e3a8a;border:none;border-radius:6px;font-size:11px;font-weight:600}
-.form{flex:1;overflow-y:auto;padding:10px;background:#f9fafb;-webkit-overflow-scrolling:touch}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;background:#f8fafc}
+button,input,select,textarea{font-family:inherit;font-size:16px;outline:none}
+#boot{position:fixed;inset:0;background:#1e3a8a;color:#fff;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column}
+#boot.hide{display:none}
+.app{width:100vw;height:100vh;height:100dvh;display:flex;position:relative}
+.sidebar{width:360px;flex-shrink:0;background:#fff;display:flex;flex-direction:column;box-shadow:2px 0 12px rgba(0,0,0,.1);z-index:1000;position:relative}
+.sidebar.hidden{margin-left:-360px}
+@media(max-width:900px){.sidebar{width:100%;max-width:420px}}
+@media(max-width:768px){.sidebar{position:absolute;left:0;top:0;bottom:0;width:90%;max-width:340px;transform:translateX(0);transition:transform .3s}.sidebar.hidden{transform:translateX(-100%);margin-left:0}}
+.head{background:#1e3a8a;color:#fff;padding:12px}
+.head h1{font-size:16px;font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.tg{background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px}
+.btns{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.btns button{height:34px;background:#fff;color:#1e3a8a;border:none;border-radius:8px;font-size:11px;font-weight:600}
+.form{flex:1;overflow-y:auto;padding:12px;background:#f8fafc}
 .f{margin-bottom:10px}
-.f label{display:block;font-size:12px;font-weight:600;margin-bottom:3px;color:#374151}
-.f input,.f select,.f textarea{width:100%;padding:9px;border:1px solid #d1d5db;border-radius:6px;font-size:16px;height:40px;background:#fff}
-.f textarea{height:52px}
-.r{display:flex;gap:10px;flex-wrap:wrap}
-.r label{display:flex;align-items:center;gap:5px;font-size:13px;padding:4px}
-.r input{width:18px;height:18px;accent-color:#2563eb}
-.chk{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
-.chk label{font-size:13px;display:flex;align-items:center;gap:6px;padding:7px 8px;background:#fff;border:1.5px solid #e5e7eb;border-radius:7px;cursor:pointer}
-.chk label:has(input:checked){background:#eff6ff;border-color:#2563eb;color:#1e3a8a;font-weight:600}
-.chk input{width:17px;height:17px}
+.f label{display:block;font-size:11px;font-weight:700;margin-bottom:4px;color:#374151}
+.f input,.f select,.f textarea{width:100%;padding:9px;border:1px solid #d1d5db;border-radius:8px;background:#fff;font-size:15px}
+.f textarea{height:50px}
+.r{display:flex;gap:6px;flex-wrap:wrap}
+.r label{display:flex;align-items:center;gap:4px;padding:5px 8px;background:#fff;border:1px solid #d1d5db;border-radius:6px;font-size:13px}
+.r label.on{background:#dbeafe;border-color:#2563eb;color:#1e3a8a;font-weight:600}
+.chk{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.chk label{display:flex;align-items:center;gap:5px;padding:7px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;font-size:12px}
+.chk label.on{background:#dbeafe;border-color:#2563eb}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.mapw{flex:1;position:relative;background:#cbd5e1;overflow:hidden}
-#map{width:100%;height:100%;background:#e5e7eb}
-.tools{position:absolute;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:1100;background:rgba(255,255,255,0.98);padding:6px;border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,0.25);display:flex;gap:4px;max-width:calc(100% - 20px);overflow-x:auto}
-.tools button{height:50px;min-width:62px;padding:4px 8px;background:#fff;border:2px solid #e5e7eb;border-radius:10px;font-size:11px;font-weight:600;position:relative}
+.mapwrap{flex:1;position:relative;background:#ddd;min-width:0}
+#map{position:absolute;inset:0}
+.tools{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:#fff;padding:5px;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.2);display:flex;gap:4px;z-index:500;max-width:95vw;overflow:auto}
+.tools button{height:48px;min-width:54px;border:1px solid #e5e7eb;background:#f9fafb;border-radius:8px;font-size:10px;font-weight:600;white-space:nowrap}
 .tools button.on{background:#2563eb;color:#fff;border-color:#2563eb}
-.tools button[data-t="bldf"].ready::after{content:"✓";position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;width:18px;height:18px;border-radius:9px;font-size:10px;display:flex;align-items:center;justify-content:center}
-.hint{position:absolute;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.92);color:#fff;padding:9px 16px;border-radius:18px;font-size:12px;z-index:1000;pointer-events:none;opacity:0;transition:opacity .2s;max-width:90%;text-align:center}
+.hint{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;z-index:600;opacity:0;transition:.2s;pointer-events:none}
 .hint.show{opacity:1}
-.fab{position:absolute;bottom:calc(90px + env(safe-area-inset-bottom));right:14px;width:52px;height:52px;border-radius:26px;background:#1e3a8a;color:#fff;border:none;font-size:22px;z-index:1002;display:none;box-shadow:0 3px 12px rgba(0,0,0,0.35);align-items:center;justify-content:center}
-.sidebar.hide ~ .mapw .fab{display:flex}
+.fab{position:absolute;top:12px;right:12px;left:auto;width:40px;height:40px;border-radius:8px;background:#1e3a8a;color:#fff;border:none;font-size:18px;z-index:700;display:none;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3)}
 @media(max-width:768px){.fab{display:flex}}
-.marker-pole{width:26px;height:26px;border-radius:50%;background:#fff;border:3px solid #000;box-shadow:0 2px 6px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
-.marker-trans{width:28px;height:28px;border-radius:50%;background:#fff;border:3px solid #dc2626;box-shadow:0 2px 6px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#dc2626}
-.marker-label{background:#fff;border:2px solid #000;padding:3px 6px;font-size:11px;font-weight:700;white-space:nowrap;border-radius:4px;box-shadow:0 2px 5px rgba(0,0,0,0.3);transform:translate(-50%,-150%);cursor:pointer}
-.marker-label.red{border-color:#dc2626;color:#dc2626;background:#fef2f2}
-.text-lab{background:#fff;border:2px solid #1f2937;padding:4px 8px;font-size:12px;font-weight:600;white-space:nowrap;border-radius:5px;box-shadow:0 2px 5px rgba(0,0,0,0.25);cursor:pointer}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:5000;display:none;align-items:center;justify-content:center;padding:20px}
-.modal.show{display:flex}
-.modal-box{background:#fff;width:100%;max-width:440px;border-radius:16px;padding:20px}
-.modal h3{font-size:17px;margin-bottom:14px}
-.modal .row{margin-bottom:12px}
-.modal label{font-size:13px;color:#374151;display:block;margin-bottom:4px;font-weight:600}
-.modal input,.modal select{width:100%;padding:12px;border:2px solid #d1d5db;border-radius:10px;font-size:16px}
-.modal-btns{display:flex;gap:10px;margin-top:16px}
-.modal-btns button{flex:1;height:46px;border:none;border-radius:10px;font-size:15px;font-weight:600}
-.modal-ok{background:#2563eb;color:#fff}
-.modal-cancel{background:#f3f4f6}
+.sidebar:not(.hidden)~.mapwrap .fab{display:none}
+.openfab{display:none}
+.sidebar.hidden~.mapwrap .openfab{display:flex}
+.pole-label{background:transparent;border:none;box-shadow:none;font-size:11px;font-weight:700;color:#000;text-shadow:0 0 2px #fff}
+/* 入力パネル */
+.inputPanel{position:absolute;top:60px;left:50%;transform:translateX(-50%);background:#fff;padding:14px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.3);z-index:800;display:none;min-width:260px}
+.inputPanel.show{display:block}
+.inputPanel input{width:100%;padding:12px;font-size:16px;border:2px solid #2563eb;border-radius:8px;margin-bottom:10px}
+.inputPanel .btns{display:flex;gap:8px}
+.inputPanel button{flex:1;height:40px;border:none;border-radius:8px;font-weight:600}
+.inputPanel .ok{background:#2563eb;color:#fff}
+.inputPanel .cancel{background:#e5e7eb;color:#374151}
+.leaflet-top.leaflet-right{top:60px;right:10px}
+
+/* === スマホズレ修正 v43.2 === */
+@media(max-width:768px){
+  .sidebar{width:94%;max-width:360px}
+  .head{padding:10px 12px}
+  .btns{grid-template-columns:repeat(3,1fr);gap:6px}
+  .btns button{height:44px;font-size:12px;border-radius:10px}
+  .form{padding:12px 12px 90px;-webkit-overflow-scrolling:touch}
+  .f{margin-bottom:12px}
+  .f input,.f select{font-size:16px;padding:12px;height:48px} /* iOSズーム防止 */
+  .f textarea{font-size:16px;padding:12px;min-height:60px}
+  .f label{font-size:12px;margin-bottom:6px}
+  .r{flex-wrap:wrap;gap:8px}
+  .r label{
+    padding:10px 12px;
+    font-size:14px;
+    min-height:44px;
+    display:flex;
+    align-items:center;
+    white-space:nowrap;
+  }
+  .r label input[type="radio"],
+  .r label input[type="checkbox"]{
+    width:20px;height:20px;margin:0;flex-shrink:0
+  }
+  .chk{
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .chk label{
+    padding:12px 10px;
+    font-size:14px;
+    min-height:50px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    line-height:1.2;
+  }
+  .chk label input[type="checkbox"]{
+    width:22px;height:22px;flex-shrink:0;margin:0
+  }
+  .grid2{gap:10px}
+  .tools{
+    bottom:18px;
+    padding:6px;
+    gap:5px;
+    max-width:98vw;
+  }
+  .tools button{
+    height:52px;
+    min-width:56px;
+    font-size:10px;
+    padding:0 4px;
+  }
+  .inputPanel{
+    top:70px;
+    width:90%;
+    max-width:320px;
+    padding:16px;
+  }
+  .inputPanel input{
+    font-size:16px;
+    padding:14px;
+    height:50px;
+  }
+}
+
 </style>
 </head>
 <body>
+<div id="boot"><div style="font-size:36px">⚡</div><div style="margin-top:10px">起動中...</div></div>
 <div class="app">
   <div class="sidebar" id="sb">
     <div class="head">
-      <div class="top"><h1>⚡ 電力申請 v40</h1><button class="tg" id="tg" type="button">▼</button></div>
+      <h1>電力申請 v43.1 <button class="tg" id="closeBtn">✕</button></h1>
       <div class="btns">
-        <button id="gps" type="button">📍 GPS</button>
-        <button id="save" type="button">💾 保存</button>
-        <button id="load" type="button">📂 読込</button>
-        <button id="undo" type="button">↩️ 戻る</button>
-        <button id="clear" type="button">🗑️ 全消</button>
-        <button id="share" type="button">📤 共有</button>
+        <button id="gps">📍GPS</button>
+        <button id="save">💾保存</button>
+        <button id="load">📂読込</button>
+        <button id="share">📤共有</button>
       </div>
     </div>
     <div class="form">
       <div class="f"><label>現場名</label><input id="genba" placeholder="〇〇邸"></div>
-      <div class="f"><label>住所</label><input id="jusho" placeholder="宮城県名取市..."></div>
+      <div class="f"><label>住所 <span id="addrstat" style="color:#2563eb;font-size:10px"></span></label><input id="jusho" placeholder="宮城県名取市..."></div>
       <div class="f"><label>工事種別</label><div class="r"><label><input type="radio" name="k" value="本設" checked>本設</label><label><input type="radio" name="k" value="仮設">仮設</label></div></div>
       <div class="f"><label>供給方式</label><select id="kyokyu"><option>単相2線式 100V</option><option selected>単相3線式 100V/200V</option><option>三相3線式 200V</option></select></div>
       <div class="grid2">
@@ -289,130 +350,163 @@ button{cursor:pointer;-webkit-user-select:none;user-select:none;touch-action:man
       </div>
       <div class="f"><label>区分</label><div class="r"><label><input type="checkbox" id="h1">二類</label><label><input type="checkbox" id="h2">三類</label><label><input type="checkbox" id="h3">空中分岐</label></div></div>
       <div class="f"><label>メーター</label><div class="r"><label><input type="radio" name="m" value="ベージュ" checked>ベージュ</label><label><input type="radio" name="m" value="グレー">グレー</label><label><input type="radio" name="m" value="なし">なし</label></div></div>
-      <div class="f"><label>設備</label><div class="chk"><label><input type="checkbox" id="e1">☀️ 太陽光</label><label><input type="checkbox" id="e2">♨️ エコキュート</label><label><input type="checkbox" id="e3">🍳 IH</label><label><input type="checkbox" id="e4">🚗 EV充電</label><label><input type="checkbox" id="e5">🔋 蓄電池</label><label><input type="checkbox" id="e6">🏠 オール電化</label></div></div>
+      <div class="f"><label>設備</label><div class="chk"><label><input type="checkbox" id="e1">☀️太陽光</label><label><input type="checkbox" id="e2">♨️エコキュート</label><label><input type="checkbox" id="e3">🍳IH</label><label><input type="checkbox" id="e4">🚗EV</label><label><input type="checkbox" id="e5">🔋蓄電池</label><label><input type="checkbox" id="e6">🏠オール電化</label></div></div>
       <div class="grid2"><div class="f"><label>受点予定</label><input id="juten" type="date"></div><div class="f"><label>検査日</label><input id="kensa" type="date"></div></div>
       <div class="f"><label>備考</label><textarea id="biko" rows="2"></textarea></div>
     </div>
   </div>
-  <div class="mapw">
+  <div class="mapwrap">
+    <button class="fab openfab" id="openBtn">☰</button>
     <div id="map"></div>
-    <button class="fab" id="fab" type="button">☰</button>
-    <div class="tools" id="tools">
-      <button data-t="pole" type="button">⚫<br>電柱</button>
-      <button data-t="trans" type="button">🔴<br>トランス</button>
-      <button data-t="line" type="button">〰️<br>低圧</button>
-      <button data-t="hikikomi" type="button">↘️<br>引込</button>
-      <button data-t="bunki" type="button">🔀<br>分岐</button>
-      <button data-t="bld" type="button">⬜<br>建物</button>
-      <button data-t="bldf" type="button">⬡<br>自由</button>
-      <button data-t="text" type="button">📝<br>文字</button>
-      <button data-t="edit" type="button">✏️<br>編集</button>
+    <div class="inputPanel" id="inputPanel">
+      <div id="inputTitle" style="font-weight:700;margin-bottom:8px">名前を入力</div>
+      <input id="nameInput" type="text" placeholder="名称" inputmode="text">
+      <div class="btns">
+        <button class="cancel" id="inputCancel">キャンセル</button>
+        <button class="ok" id="inputOk">決定</button>
+      </div>
     </div>
-    <div class="hint" id="hint">ツール選択→地図タップ</div>
+    <div class="tools">
+      <button data-t="pole">電柱</button>
+      <button data-t="trans">トランス</button>
+      <button data-t="line">低圧</button>
+      <button data-t="hikikomi">引込</button>
+      <button data-t="bunki">分岐</button>
+      <button data-t="bld">建物</button>
+      <button data-t="bldf">自由</button>
+      <button data-t="text">文字</button>
+      <button data-t="edit">編集</button>
+      <button id="mapUndo">↩️戻</button>
+      <button id="mapClear">🗑️全消</button>
+    </div>
+    <div class="hint" id="hint"></div>
   </div>
 </div>
-<div class="modal" id="modal"><div class="modal-box"><h3 id="mtitle">入力</h3><div id="mbody"></div><div class="modal-btns"><button class="modal-cancel" id="mcancel" type="button">キャンセル</button><button class="modal-ok" id="mok" type="button">OK</button></div></div></div>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-!function(){
-  const $=id=>document.getElementById(id);
-  const hint=$('hint'), modal=$('modal'), mbody=$('mbody');
-  let mResolve=null;
-  const geoCache = (()=>{try{return JSON.parse(localStorage.getItem('geoCache')||'{}')}catch(e){return {}}})();
-  const saveGeoCache = ()=>{try{localStorage.setItem('geoCache', JSON.stringify(geoCache))}catch(e){}};
-  
-  function showModal(title,html){$('mtitle').textContent=title;mbody.innerHTML=html;modal.classList.add('show');return new Promise(r=>{mResolve=r})}
-  $('mok').onclick=()=>{if(mResolve){const data={};mbody.querySelectorAll('input,select,textarea').forEach(el=>{if(el.type==='radio'){if(el.checked)data[el.name]=el.value;return}const key=el.id||el.name;if(!key)return;data[key]=el.value});mResolve(data)}modal.classList.remove('show');mResolve=null};
-  $('mcancel').onclick=()=>{modal.classList.remove('show');if(mResolve)mResolve(null);mResolve=null};
-  
-  const show=t=>{hint.textContent=t;hint.classList.add('show');clearTimeout(show._t);show._t=setTimeout(()=>hint.classList.remove('show'),1800)};
-  const vib=p=>{try{if(navigator.vibrate)navigator.vibrate(p||10)}catch(e){}};
-  const getR=n=>document.querySelector(`input[name="${n}"]:checked`)?.value||'';
-  const setR=(n,v)=>{document.querySelectorAll(`input[name="${n}"]`).forEach(e=>e.checked=false);if(v){const e=document.querySelector(`input[name="${n}"][value="${v}"]`);if(e)e.checked=true}};
-  
-  const map=L.map('map',{zoomControl:false,preferCanvas:true}).setView([38.172,140.882],18);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:21,attribution:'©OSM'}).addTo(map);
-  L.control.zoom({position:'bottomright'}).addTo(map);
-  const layerGroup=L.layerGroup().addTo(map);
-  
-  if(window.ResizeObserver){new ResizeObserver(()=>map.invalidateSize()).observe(document.getElementById('map'))}
-  
-  const state={tool:null,objs:[],undo:[],tmp:[],last:0};
-  
-  // 改善1: pushHistory軽量化
-  function pushHistory(){
-    if(state.objs.length>200){ // 大規模現場は履歴制限
-      if(state.undo.length>10) state.undo.shift();
-      return;
-    }
-    const snap = JSON.stringify(state.objs.map(o=>({t:o.t,d:o.d,id:o.id})));
-    if(state.undo[state.undo.length-1] !== snap){
-      state.undo.push(snap);
-      if(state.undo.length>30) state.undo.shift(); // 30→軽量化
+(function(){
+var boot=document.getElementById('boot');
+setTimeout(function(){boot.classList.add('hide')},400);
+var $=function(id){return document.getElementById(id)};
+var sb=$('sb'), hint=$('hint'), addrstat=$('addrstat');
+function show(t){hint.textContent=t;hint.classList.add('show');setTimeout(function(){hint.classList.remove('show')},1800)}
+$('closeBtn').onclick=function(){sb.classList.add('hidden');setTimeout(function(){map.invalidateSize()},300)};
+$('openBtn').onclick=function(){sb.classList.remove('hidden');setTimeout(function(){map.invalidateSize()},300)};
+function upd(){document.querySelectorAll('.r label,.chk label').forEach(function(l){var i=l.querySelector('input');l.className=i&&i.checked?'on':''})}
+document.addEventListener('change',upd);
+var map = L.map('map',{doubleClickZoom:false,zoomControl:false}).setView([38.172,140.882],16);
+L.control.zoom({position:'topright'}).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'©OSM'}).addTo(map);
+var layer=L.layerGroup().addTo(map);
+var historyStack=[];
+function pushHist(l){historyStack.push(l)}
+setTimeout(function(){map.invalidateSize()},500);
+window.addEventListener('resize',function(){map.invalidateSize()});
+var tool=null, tmp=[], tempLine=null, polyPoints=[], editMode=false;
+var labelCounter=1, transCounter=1, pending=null;
+document.querySelectorAll('.tools button').forEach(function(b){
+  b.onclick=function(){
+    var t=b.dataset.t;
+    if(tool==='bldf' && polyPoints.length){finishPoly()}
+    tool=tool===t?null:t;
+    document.querySelectorAll('.tools button').forEach(function(x){x.classList.remove('on')});
+    if(tool){b.classList.add('on');show(t)} 
+    tmp=[]; 
+    if(tempLine){map.removeLayer(tempLine);tempLine=null}
+    toggleEdit(tool==='edit');
+  }
+});
+function addToLayer(l){l.addTo(layer);pushHist(l);return l}
+function finishPoly(){
+  if(polyPoints.length>=3){
+    addToLayer(L.polygon(polyPoints,{color:'#2563eb',weight:2,fillOpacity:.1}));
+    show('自由建物完了')
+  }
+  polyPoints=[];if(tempLine){map.removeLayer(tempLine);tempLine=null}
+}
+var panel=$('inputPanel'), nameInput=$('nameInput');
+function openInput(type,latlng){
+  pending={type:type,latlng:latlng};
+  $('inputTitle').textContent=type==='pole'?'電柱名':'トランス名';
+  nameInput.value=type==='pole'?($('hikikomi_basho').value||'P'+labelCounter):($('trans_basho').value||'T'+transCounter);
+  panel.classList.add('show');setTimeout(function(){nameInput.focus();nameInput.select()},100);
+}
+$('inputCancel').onclick=function(){panel.classList.remove('show');pending=null};
+$('inputOk').onclick=function(){
+  if(!pending) return;
+  var name=nameInput.value.trim()||'名称未設定';
+  var ll=pending.latlng;
+  if(pending.type==='pole'){
+    var m=L.circleMarker(ll,{radius:6,color:'#000',fillColor:'#fff',fillOpacity:1,weight:2});
+    m.bindTooltip(name,{permanent:true,direction:'top',offset:[0,-8],className:'pole-label'}).openTooltip();
+    addToLayer(m);labelCounter++;
+  }else{
+    var m2=L.circleMarker(ll,{radius:7,color:'red',fillColor:'#fff',fillOpacity:1,weight:2});
+    m2.bindTooltip(name,{permanent:true,direction:'top',offset:[0,-8],className:'pole-label'}).openTooltip();
+    addToLayer(m2);transCounter++;
+  }
+  panel.classList.remove('show');pending=null;show('配置完了');
+};
+nameInput.addEventListener('keydown',function(e){if(e.key==='Enter')$('inputOk').click()});
+map.on('click',function(e){
+  if(!tool || editMode || panel.classList.contains('show')) return;
+  var ll=e.latlng;
+  if(tool==='pole'||tool==='trans'){openInput(tool,ll);return}
+  if(tool==='line'||tool==='hikikomi'||tool==='bunki'){
+    tmp.push(ll);
+    if(tmp.length===2){
+      var line=L.polyline(tmp,{color:tool==='line'?'#000':'red',weight:4});
+      addToLayer(line);
+      if(tool==='hikikomi'){
+        var dist=map.distance(tmp[0],tmp[1]);
+        var mid=L.latLng((tmp[0].lat+tmp[1].lat)/2,(tmp[0].lng+tmp[1].lng)/2);
+        var txt=L.marker(mid,{icon:L.divIcon({html:'<div style="background:#fff;padding:2px 5px;border:1px solid #000;font-size:12px">'+dist.toFixed(1)+'m</div>',className:''})});
+        addToLayer(txt);
+      }
+      tmp=[];
     }
   }
-  
-  function add(t,d){pushHistory();const o={t,id:'o'+Date.now().toString(36)+Math.random().toString(36).slice(2),d:JSON.parse(JSON.stringify(d))};state.objs.push(o);render(o);requestSave();vib(10);return o}
-  
-  // 改善3: render再利用
-  function render(o){
-    const d=o.d;
-    if(!o._group){o._group=L.layerGroup();layerGroup.addLayer(o._group)}else{o._group.clearLayers()}
-    if(o.t==='pole'){
-      const m=L.marker([d.lat,d.lng],{icon:L.divIcon({className:'',html:`<div class="marker-pole">${(d.no||'').slice(-2)}</div>`,iconSize:[26,26],iconAnchor:[13,13]})});
-      m.on('click',()=>editObj(o));o._group.addLayer(m);
-      if(d.no){const l=L.marker([d.lat,d.lng],{icon:L.divIcon({className:'',html:`<div class="marker-label">${d.no}</div>`}),interactive:true});l.on('click',()=>editObj(o));o._group.addLayer(l)}
-    }else if(o.t==='trans'){
-      const cap=d.cap?d.cap.replace('kVA',''):'';const m=L.marker([d.lat,d.lng],{icon:L.divIcon({className:'',html:`<div class="marker-trans">${cap}</div>`,iconSize:[28,28],iconAnchor:[14,14]})});m.on('click',()=>editObj(o));o._group.addLayer(m);
-      const label=[d.no,d.cap].filter(Boolean).join(' ');if(label){const l=L.marker([d.lat,d.lng],{icon:L.divIcon({className:'',html:`<div class="marker-label red">${label}</div>`}),interactive:true});l.on('click',()=>editObj(o));o._group.addLayer(l)}
-    }else if(o.t==='line'||o.t==='hikikomi'||o.t==='bunki'){
-      const opt={color:o.t==='line'?'#000':'#dc2626',weight:4,opacity:0.95};if(o.t==='bunki')opt.dashArray='6,8';
-      const pl=L.polyline([[d.p1.lat,d.p1.lng],[d.p2.lat,d.p2.lng]],opt);pl.on('click',()=>editLength(o));o._group.addLayer(pl);
-      const dist=d.dist||map.distance(d.p1,d.p2).toFixed(1);const mid=[(d.p1.lat+d.p2.lat)/2,(d.p1.lng+d.p2.lng)/2];
-      const lm=L.marker(mid,{icon:L.divIcon({className:'',html:`<div class="marker-label red">${dist}m</div>`}),interactive:true});lm.on('click',()=>editLength(o));o._group.addLayer(lm);
-    }else if(o.t==='bld'||o.t==='bldf'){
-      o._group.addLayer(L.polygon(d.ps.map(p=>[p.lat,p.lng]),{color:o.t==='bldf'?'#2563eb':'#dc2626',weight:3,fillOpacity:0.14}));
-    }else if(o.t==='text'){
-      const tm=L.marker([d.lat,d.lng],{icon:L.divIcon({className:'',html:`<div class="text-lab">${d.text}</div>`}),interactive:true});tm.on('click',()=>editText(o));o._group.addLayer(tm);
-    }
+  else if(tool==='bld'){
+    tmp.push(ll);
+    if(tmp.length===2){addToLayer(L.rectangle([tmp[0],tmp[1]],{color:'#2563eb',weight:2,fillOpacity:.1}));tmp=[]}
   }
-  
-  async function editObj(o){if(state.tool!=='edit')return;pushHistory();if(o.t==='pole'){const r=await showModal('電柱編集',`<div class="row"><label>柱番号</label><input id="no" name="no" value="${o.d.no||''}"></div>`);if(r){o.d.no=r.no;render(o);requestSave()}}else if(o.t==='trans'){const caps=['','5kVA','10kVA','15kVA','20kVA','25kVA','30kVA','40kVA','50kVA','60kVA','75kVA'];const r=await showModal('トランス編集',`<div class="row"><label>柱番号</label><input id="no" name="no" value="${o.d.no||''}"></div><div class="row"><label>容量</label><select id="cap" name="cap">${caps.map(v=>`<option ${o.d.cap===v?'selected':''}>${v}</option>`).join('')}</select></div>`);if(r){o.d.no=r.no;o.d.cap=r.cap;render(o);requestSave()}}}
-  async function editLength(o){if(state.tool!=='edit')return;pushHistory();const cur=o.d.dist||map.distance(o.d.p1,o.d.p2).toFixed(1);const r=await showModal('長さ修正',`<div class="row"><label>m</label><input id="dist" name="dist" type="number" step="0.1" value="${cur}"></div>`);if(r&&r.dist){o.d.dist=parseFloat(r.dist).toFixed(1);render(o);requestSave()}}
-  async function editText(o){if(state.tool!=='edit')return;pushHistory();const r=await showModal('文字修正',`<div class="row"><label>文字</label><input id="text" name="text" value="${o.d.text}"></div>`);if(r&&r.text){o.d.text=r.text;render(o);requestSave()}}
-  
-  function clearAll(){layerGroup.clearLayers();state.objs.forEach(o=>o._group=null);state.objs=[]}
-  
-  map.on('click',async e=>{if(!state.tool||state.tool==='edit')return;const now=Date.now();if(now-state.last<140)return;state.last=now;const ll=e.latlng;
-    if(state.tool==='pole'){const r=await showModal('電柱','<div class="row"><label>柱番号</label><input id="no" name="no" value="'+($('hikikomi_basho').value||'')+'"></div>');if(!r)return;add('pole',{lat:ll.lat,lng:ll.lng,no:r.no})}
-    else if(state.tool==='trans'){const caps=['','5kVA','10kVA','15kVA','20kVA','25kVA','30kVA','40kVA','50kVA','60kVA','75kVA'];const r=await showModal('トランス','<div class="row"><label>柱番号</label><input id="no" name="no" value="'+($('trans_basho').value||'')+'"></div><div class="row"><label>容量</label><select id="cap" name="cap">'+caps.map(v=>'<option>'+v+'</option>').join('')+'</select></div>');if(!r)return;add('trans',{lat:ll.lat,lng:ll.lng,no:r.no,cap:r.cap})}
-    else if(state.tool==='line'){state.tmp.push(ll);if(state.tmp.length===2){add('line',{p1:state.tmp[0],p2:state.tmp[1]});state.tmp=[]}else show('終点')}
-    else if(state.tool==='hikikomi'){state.tmp.push(ll);if(state.tmp.length===2){const d=map.distance(state.tmp[0],state.tmp[1]).toFixed(1);add('hikikomi',{p1:state.tmp[0],p2:state.tmp[1],dist:d});state.tmp=[]}else show('終点')}
-    else if(state.tool==='bunki'){state.tmp.push(ll);if(state.tmp.length===2){add('bunki',{p1:state.tmp[0],p2:state.tmp[1]});state.tmp=[]}else show('終点')}
-    else if(state.tool==='bld'){state.tmp.push(ll);if(state.tmp.length===2){const a=state.tmp[0],b=state.tmp[1];add('bld',{ps:[{lat:a.lat,lng:a.lng},{lat:a.lat,lng:b.lng},{lat:b.lat,lng:b.lng},{lat:b.lat,lng:a.lng}]});state.tmp=[]}else show('対角')}
-    else if(state.tool==='bldf'){state.tmp.push(ll);show(state.tmp.length+'点');const btn=document.querySelector('[data-t="bldf"]');if(state.tmp.length>=3)btn.classList.add('ready')}
-    else if(state.tool==='text'){const r=await showModal('文字','<div class="row"><label>文字</label><input id="text" name="text"></div>');if(r&&r.text)add('text',{lat:ll.lat,lng:ll.lng,text:r.text})}
-  });
-  
-  document.querySelectorAll('#tools button').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.t==='bldf'&&state.tool==='bldf'&&state.tmp.length>=3){add('bldf',{ps:state.tmp.map(p=>({lat:p.lat,lng:p.lng}))});state.tmp=[];b.classList.remove('ready');return}state.tool=b.dataset.t;if(b.dataset.t!=='bldf')state.tmp=[];document.querySelectorAll('#tools button').forEach(x=>x.classList.remove('on'));b.classList.add('on')}));
-  
-  $('gps').onclick=async()=>{try{const p=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:15000}));const lat=p.coords.latitude,lng=p.coords.longitude;map.setView([lat,lng],19);const key=lat.toFixed(5)+','+lng.toFixed(5);if(geoCache[key]){$('jusho').value=geoCache[key];return}const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=ja`);const d=await r.json();let addr='';if(d?.address){const a=d.address;addr=[a.state,a.city||a.town,a.suburb||'',a.road||''].filter(Boolean).join(' ')}if(!addr)addr=`${lat.toFixed(5)},${lng.toFixed(5)}`;geoCache[key]=addr;saveGeoCache();$('jusho').value=addr}catch(e){}};
-  
-  // 改善1: debounce save
-  let saveTimer=null;
-  function doSave(){try{const c=map.getCenter();const d={v:'40',f:{genba:$('genba').value,jusho:$('jusho').value,koji:getR('k'),kyokyu:$('kyokyu').value,keiyaku:$('keiyaku').value,amp:$('amp').value,dv:$('dv').value,sz:$('sz').value,hikikomi_basho:$('hikikomi_basho').value,trans_basho:$('trans_basho').value,trans_cap1:$('trans_cap1').value,trans_cap2:$('trans_cap2').value,mbox:getR('m'),hk:['h1','h2','h3'].filter(id=>$(id).checked),eq:['e1','e2','e3','e4','e5','e6'].filter(id=>$(id).checked),juten:$('juten').value,kensa:$('kensa').value,biko:$('biko').value},o:state.objs.map(o=>({t:o.t,d:o.d,id:o.id})),c:{lat:c.lat,lng:c.lng},z:map.getZoom()};localStorage.setItem('dq40',JSON.stringify(d))}catch(e){}}
-  function requestSave(){clearTimeout(saveTimer);saveTimer=setTimeout(doSave,800)}
-  
-  function load(){try{const s=localStorage.getItem('dq40')||localStorage.getItem('dq39');if(!s)return;const d=JSON.parse(s),f=d.f||{};Object.entries({genba:f.genba,jusho:f.jusho,kyokyu:f.kyokyu,keiyaku:f.keiyaku,amp:f.amp,dv:f.dv,sz:f.sz,hikikomi_basho:f.hikikomi_basho,trans_basho:f.trans_basho,trans_cap1:f.trans_cap1,trans_cap2:f.trans_cap2,juten:f.juten,kensa:f.kensa,biko:f.biko}).forEach(([k,v])=>{if($(k))$(k).value=v||''});setR('k',f.koji);setR('m',f.mbox);['h1','h2','h3','e1','e2','e3','e4','e5','e6'].forEach(id=>{if($(id))$(id).checked=(f.hk||f.eq||[]).includes(id)});if(d.c)map.setView([d.c.lat,d.c.lng],d.z);clearAll();(d.o||[]).forEach(o=>{const no={t:o.t,d:o.d,id:o.id};state.objs.push(no);render(no)});pushHistory()}catch(e){}}
-  
-  $('save').onclick=()=>{doSave();show('保存')};
-  $('load').onclick=load;
-  $('undo').onclick=()=>{if(state.undo.length<2)return;state.undo.pop();const prev=JSON.parse(state.undo[state.undo.length-1]||'[]');clearAll();state.objs=[];prev.forEach(o=>{const no={t:o.t,d:o.d,id:o.id};state.objs.push(no);render(no)});requestSave()};
-  $('clear').onclick=()=>{if(confirm('全削除?')){pushHistory();clearAll();pushHistory();requestSave()}};
-  
-  document.querySelectorAll('input,select,textarea').forEach(e=>e.addEventListener('input',requestSave));
-  setInterval(doSave,60000);
-  window.addEventListener('load',()=>setTimeout(load,500));
-}();
+  else if(tool==='bldf'){
+    polyPoints.push(ll);
+    if(tempLine)map.removeLayer(tempLine);
+    tempLine=L.polyline(polyPoints.concat([polyPoints[0]]),{color:'#2563eb',weight:2,dashArray:'4'}).addTo(map);
+  }
+  else if(tool==='text'){
+    var mk=L.marker(ll,{icon:L.divIcon({html:'<div contenteditable="true" style="background:#fff;padding:2px 5px;border:1px solid #000;font-size:12px;min-width:30px">テキスト</div>',className:''}),draggable:true});
+    addToLayer(mk);
+  }
+});
+map.on('dblclick',function(){if(tool==='bldf')finishPoly()});
+function toggleEdit(on){
+  editMode=on;
+  layer.eachLayer(function(l){if(l.dragging){on?l.dragging.enable():l.dragging.disable()}});
+  map.getContainer().style.cursor=on?'move':'';
+  if(on)show('編集:ドラッグで移動');
+}
+$('gps').onclick=function(){
+  if(!navigator.geolocation){show('GPS不可');return}
+  addrstat.textContent='取得中';show('GPS取得中...');
+  navigator.geolocation.getCurrentPosition(function(p){
+    var lat=p.coords.latitude,lng=p.coords.longitude;
+    map.setView([lat,lng],18);
+    var m=L.marker([lat,lng]).bindPopup('現在地').addTo(layer);
+    pushHist(m);$('jusho').value=lat.toFixed(5)+','+lng.toFixed(5);addrstat.textContent='✓';show('GPS成功');
+  },function(err){show('GPS失敗');addrstat.textContent='×'},{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+};
+function getR(n){var e=document.querySelector('input[name="'+n+'"]:checked');return e?e.value:''}
+function setR(n,v){document.querySelectorAll('input[name="'+n+'"]').forEach(function(e){e.checked=e.value===v});upd()}
+$('save').onclick=function(){try{var d={genba:$('genba').value,jusho:$('jusho').value,koji:getR('k'),kyokyu:$('kyokyu').value,keiyaku:$('keiyaku').value,amp:$('amp').value};localStorage.setItem('dq',JSON.stringify(d));show('保存')}catch(e){show('保存失敗')}};
+$('load').onclick=function(){try{var d=JSON.parse(localStorage.getItem('dq')||'{}');$('genba').value=d.genba||'';$('jusho').value=d.jusho||'';if(d.koji)setR('k',d.koji);$('kyokyu').value=d.kyokyu||'';$('keiyaku').value=d.keiyaku||'';$('amp').value=d.amp||'';upd();show('読込')}catch(e){show('読込失敗')}};
+$('mapClear').onclick=function(){layer.clearLayers();historyStack=[];show('全消去')};
+$('mapUndo').onclick=function(){var l=historyStack.pop();if(l){layer.removeLayer(l);show('1つ戻す')}else{show('履歴なし')}};
+$('share').onclick=function(){if(navigator.share){navigator.share({title:$('genba').value||'電力申請',text:$('jusho').value||''})}else{show('共有不可')}};
+upd();show('準備OK');
+})();
 </script>
 </body>
 </html>
