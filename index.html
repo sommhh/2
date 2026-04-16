@@ -188,9 +188,9 @@
     originalRAF.call(window, onFrame);
   }
 })();</script>
-
 <script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
-<meta charset="UTF-8"><title>電力申請 v54.4 完全版</title>
+
+<meta charset="UTF-8"><title>電力申請 v55.7 完全版</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
 <style>
 html,body{height:100%;margin:0;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;background:#f8fafc}
@@ -212,7 +212,7 @@ html,body{height:100%;margin:0;overflow:hidden;font-family:-apple-system,BlinkMa
 .chk label:has(input:checked){background:#dbeafe;border-color:#2563eb;color:#1e3a8a;font-weight:600}
 .chk label span{pointer-events:none}
 .mapwrap{flex:1;position:relative;background:#ddd}
-#map{position:absolute;inset:0}
+#map{position:absolute;inset:0;touch-action:none}
 .tools{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:#fff;padding:5px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.2);display:flex;gap:4px;z-index:500}
 .tools button{height:44px;min-width:52px;border:1px solid #e5e7eb;background:#f9fafb;border-radius:6px;font-size:10px}
 .tools button.on{background:#2563eb;color:#fff}
@@ -253,7 +253,7 @@ html,body{height:100%;margin:0;overflow:hidden;font-family:-apple-system,BlinkMa
 </head><body>
 <div class="app">
 <div class="sidebar" id="sb">
-<div class="head"><h1>電力申請 v54.4 <button class="tg" id="close">✕</button></h1>
+<div class="head"><h1>電力申請 v55.7 <button class="tg" id="close">✕</button></h1>
 <div class="btns"><button id="gps">GPS</button><button id="save">💾保存</button><button id="load">📂読込</button><button id="share">📤共有</button><button id="screenshot">📸スクショ</button><button id="print">🖨️印刷</button><button id="clear">🗑️全消</button></div></div>
 <div class="form">
 <div class="f"><label>現場名</label><input id="genba" placeholder="〇〇邸新築工事"></div>
@@ -309,7 +309,7 @@ setTimeout(()=>map.invalidateSize(),500);
 const layer=L.layerGroup().addTo(map);
 let pressTimer=null;
 map.on('contextmenu', e=>{const target = e.originalEvent.target;if(target && target.classList.contains('comment-text')){target.contentEditable='true';target.focus();show('編集モード');}});
-map.on('touchstart', e=>{if(tool !== 'comment') return;pressTimer = setTimeout(()=>{const target = e.originalEvent.target;if(target && target.classList.contains('comment-text')){target.contentEditable='true';target.focus();const range = document.createRange();range.selectNodeContents(target);const sel = window.getSelection();sel.removeAllRanges();sel.addRange(range);show('編集モード');}}, 600);});
+map.on('touchstart', e=>{if(tool !== 'comment') return;if(e.touches && e.touches.length > 1) return;pressTimer = setTimeout(()=>{const target = e.originalEvent.target;if(target && target.classList.contains('comment-text')){target.contentEditable='true';target.focus();const range = document.createRange();range.selectNodeContents(target);const sel = window.getSelection();sel.removeAllRanges();sel.addRange(range);show('編集モード');}}, 400);});
 map.on('touchend touchmove', ()=>{clearTimeout(pressTimer);});
 let tool=null,tmp=[],dot=null,stack=[];
 document.querySelectorAll('.tools button[data-t]').forEach(b=>b.onclick=()=>{tool=tool===b.dataset.t?null:b.dataset.t;document.querySelectorAll('.tools button').forEach(x=>x.classList.remove('on'));if(tool)b.classList.add('on');if(dot){map.removeLayer(dot);dot=null}tmp=[];show(tool||'解除')});
@@ -319,22 +319,24 @@ $('pcancel').onclick=()=>{panel.classList.remove('show');pend=null};
 $('pok').onclick=()=>{if(!pend)return;const v=pinput.value||'';const ll=pend.ll;if(pend.t==='comment'){const m=L.marker(ll,{draggable:true,icon:L.divIcon({className:'',html:`<div class="comment-text" contenteditable="false">${escapeHTML(v||'コメント')}</div>`,iconSize:[0,0]})}).addTo(layer);m._commentText = v || 'コメント'; m.on('add', ()=>{ const el=m.getElement(); if(el){ const ct=el.querySelector('.comment-text'); if(ct){ ct.addEventListener('input', e=>{ m._commentText = e.target.innerText; }); } } }); stack.push(m)}else{const isP=pend.t==='pole';const html=`<div style="width:${isP?22:24}px;height:${isP?22:24}px;border:3px solid ${isP?'#000':'red'};background:#fff;border-radius:50%"></div>`;const m=L.marker(ll,{draggable:true,icon:L.divIcon({className:'',html,iconSize:[22,22],iconAnchor:[11,11]})}).addTo(layer);if(v)m.bindTooltip(v,{permanent:true,direction:'top',offset:[0,-10],className:'pole-label'}).openTooltip();stack.push(m)}panel.classList.remove('show');pend=null};
 function open(t,ll){pend={t,ll};$('ptitle').textContent=t==='pole'?'電柱番号':t==='trans'?'トランス番号':'コメント';pinput.value=t==='pole'?$('hikikomi_basho').value:t==='trans'?$('trans_basho').value:'';panel.classList.add('show');pinput.focus()}
 let bldStart=null, bldRect=null;
+let isDrawingBld = false;
 map.on('mousedown', e=>{if(tool!=='bld') return;bldStart=e.latlng;map.dragging.disable();});
 map.on('mousemove', e=>{if(tool!=='bld' || !bldStart) return;if(bldRect) map.removeLayer(bldRect);bldRect = L.rectangle([bldStart, e.latlng], {color:'#2563eb', weight:3, fillOpacity:.25, dashArray:'5,5'}).addTo(map);});
 map.on('mouseup', e=>{if(tool!=='bld' || !bldStart) return;map.dragging.enable();if(bldRect){ map.removeLayer(bldRect); bldRect=null; }const r = L.rectangle([bldStart, e.latlng], {color:'#2563eb', weight:3, fillOpacity:.2}).addTo(layer);stack.push(r);bldStart=null;show('建物配置');});
-map.on('touchstart', e=>{if(tool!=='bld') return;if(e.touches && e.touches.length > 1) return;bldStart=e.latlng;map.dragging.disable();});
+map.on('touchstart', e=>{if(tool!=='bld') return;if(e.touches && e.touches.length > 1) return;isDrawingBld = true;bldStart=e.latlng;map.dragging.disable();});
 map.on('touchmove', e=>{if(tool!=='bld' || !bldStart) return;if(bldRect) map.removeLayer(bldRect);bldRect = L.rectangle([bldStart, e.latlng], {color:'#2563eb', weight:3, fillOpacity:.25, dashArray:'5,5'}).addTo(map);});
-map.on('touchend', e=>{if(tool!=='bld' || !bldStart) return;map.dragging.enable();if(bldRect){ map.removeLayer(bldRect); bldRect=null; }const r = L.rectangle([bldStart, e.latlng], {color:'#2563eb', weight:3, fillOpacity:.2}).addTo(layer);stack.push(r);bldStart=null;show('建物配置');});
+map.on('touchend', e=>{if(tool!=='bld' || !bldStart) return;map.dragging.enable();if(bldRect){ map.removeLayer(bldRect); bldRect=null; }const r = L.rectangle([bldStart, e.latlng], {color:'#2563eb', weight:3, fillOpacity:.2}).addTo(layer);stack.push(r);bldStart=null;isDrawingBld = false;show('建物配置');});
 function handleMapTap(e){if(!tool) return;const ll = e.latlng;if(tool==='pole'||tool==='trans'||tool==='comment'){open(tool,ll);return;}if(['line','hline','hikikomi'].includes(tool)){if(!tmp.length){tmp.push(ll);dot = L.circleMarker(ll,{radius:5,color:'red',fillColor:'yellow',fillOpacity:1}).addTo(map);}else{tmp.push(ll);const col = {line:'#000',hline:'#7c3aed',hikikomi:'#dc2626'}[tool];const l = L.polyline(tmp,{color:col,weight:4}).addTo(layer);stack.push(l);if(stack.length>300)stack.shift();map.removeLayer(dot);dot=null;tmp=[];}}}
 let lastTouchTime = 0;
-map.on('click', function(e){if('ontouchstart' in window) return;handleMapTap(e);});
-const TAP_DELAY = 200;
-let lastTap = 0;
-map.on('touchend', function(e){const now = Date.now();if(now - lastTap < TAP_DELAY) return;lastTap = now;if(tool === 'bld') return;if(!tool) return;if(touchMoved) return;if(e.latlng){handleMapTap(e);}});
+let isTouch = false;
+map.on('click', function(e){if(isTouch){isTouch = false;return;}handleMapTap(e);});
+
+map.on('touchend', function(e){if(isDrawingBld) return;if(tool === 'bld') return;if(!tool) return;if(touchMoved && tool !== 'line' && tool !== 'hline' && tool !== 'hikikomi') return;const touch = e.originalEvent?.changedTouches?.[0];if(!touch) return;const rect = map.getContainer().getBoundingClientRect();const point = L.point(touch.clientX - rect.left,touch.clientY - rect.top);const latlng = map.containerPointToLatLng(point);handleMapTap({ latlng });});
 let touchMoved = false;
 let touchStartPos = null;
-map.on('touchstart', function(e){touchMoved = false;if(e.touches && e.touches[0]){touchStartPos = e.touches[0];}});
-map.on('touchmove', function(e){if(!touchStartPos || !e.touches[0]) return;const dx = Math.abs(e.touches[0].clientX - touchStartPos.clientX);const dy = Math.abs(e.touches[0].clientY - touchStartPos.clientY);if(dx > 30 || dy > 30){touchMoved = true;}});
+map.on('touchstart', function(e){isTouch = true;touchMoved = false;if(e.touches && e.touches[0]){touchStartPos = e.touches[0];}});
+map.on('movestart', ()=>{ touchMoved = true; });
+map.on('touchmove', function(e){if(!touchStartPos || !e.touches[0]) return;const dx = Math.abs(e.touches[0].clientX - touchStartPos.clientX);const dy = Math.abs(e.touches[0].clientY - touchStartPos.clientY);if(dx > 20 || dy > 20){touchMoved = true;}});
 $('undo').onclick=()=>{const l=stack.pop();if(l)layer.removeLayer(l)};
 $('undo').oncontextmenu = (e)=>{e.preventDefault();if(confirm('すべて戻しますか？')){while(stack.length){layer.removeLayer(stack.pop());}}};
 $('gps').onclick=()=>{if(!navigator.geolocation){show('GPS未対応');return}navigator.geolocation.getCurrentPosition(p=>map.setView([p.coords.latitude,p.coords.longitude],map.getZoom()||18),()=>show('位置取得できません'),{enableHighAccuracy:true,timeout:10000})};
