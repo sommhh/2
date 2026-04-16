@@ -1,6 +1,5 @@
 <!DOCTYPE html><html lang="ja"><head>
-<!-- Playables SD
-K -->
+<!-- Playables SDK -->
 <script>// Playables SDK v1.0.0
 // Game lifecycle bridge: rAF-based game-ready detection + event communication
 (function() {
@@ -89,6 +88,25 @@ K -->
     originalRAF.call(window, onFrame);
   }
 
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
   // --- First User Interaction Detection ---
 
   function setupFirstInteractionDetection() {
@@ -170,8 +188,9 @@ K -->
     originalRAF.call(window, onFrame);
   }
 })();</script>
+
 <script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
-<meta charset="UTF-8"><title>電力申請 v53.3 シンプル版</title>
+<meta charset="UTF-8"><title>電力申請 v54.4 完全版</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
 <style>
 html,body{height:100%;margin:0;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;background:#f8fafc}
@@ -209,141 +228,32 @@ html,body{height:100%;margin:0;overflow:hidden;font-family:-apple-system,BlinkMa
 .ok{background:#2563eb;color:#fff}.cancel{background:#e5e7eb}
 @media print{
   @page{size:A4;margin:5mm}
-
-  html,body{
-    height:auto!important;
-    overflow:visible!important;
-    background:#fff;
-    -webkit-print-color-adjust:exact
-  }
-
-  .tools,.fab,.hint,.inputPanel,.btns,#tantoPanel,.tg{
-    display:none!important
-  }
-
-  .app{
-    display:block!important
-  }
-
-  .sidebar{
-    width:100%!important;
-    box-shadow:none!important;
-    page-break-after:always!important;
-  }
-
-  /* ===== フォーム（1ページ目）===== */
-  .head{
-    padding:1.5mm 0;
-    margin-bottom:2.5mm;
-    border-bottom:0.5mm solid #000
-  }
-
-  .head h1{
-    font-size:15pt;
-    font-weight:800
-  }
-
-  .form{
-    padding:0!important;
-    margin:0!important;
-    font-size:11pt;
-    line-height:1.3;
-  }
-
-  .f{
-    margin-bottom:2.3mm
-  }
-
-  .f label{
-    font-size:9.5pt;
-    font-weight:700;
-    margin-bottom:0.7mm
-  }
-
-  .f input,
-  .f select,
-  .f textarea{
-    font-size:10.5pt;
-    padding:1.3mm 1.8mm;
-    border:0.28mm solid #000;
-    border-radius:1mm;
-    height:auto;
-    line-height:1.25;
-  }
-
-  textarea#biko{
-    height:18mm!important
-  }
-
-  .grid2{
-    gap:2mm
-  }
-
-  .chk label{
-    font-size:9.5pt;
-    padding:1.3mm 3mm;
-    border-width:1px!important;
-  }
-
-  /* ===== 地図ページ（2ページ目）===== */
-  .mapwrap{
-    display:block!important;
-    position:relative!important;
-    page-break-before:auto!important;
-  }
-
-  #map{
-    width:100%!important;
-    height:250mm!important;
-    margin-top:20mm;
-  }
-
-  .map-print-header{
-    display:block!important;
-    position:absolute!important;
-    top:0;
-    left:0;
-    width:100%;
-    padding:2.5mm 4mm 1.5mm;
-    background:#fff;
-    z-index:9999;
-    border-bottom:0.5mm solid #000;
-    box-sizing:border-box;
-  }
-
-  .map-print-header .mph-row{
-    display:flex;
-    align-items:baseline;
-    margin-bottom:1.2mm;
-  }
-  .map-print-header .mph-label{
-    font-size:9pt;
-    font-weight:700;
-    color:#000;
-    width:16mm;
-    flex-shrink:0;
-    border:0.25mm solid #000;
-    padding:0.8mm 1.5mm;
-    background:#f3f4f6;
-    text-align:center;
-    margin-right:2.5mm;
-  }
-  .map-print-header .mph-val{
-    font-size:13pt;
-    font-weight:800;
-    color:#000;
-    flex:1;
-    border-bottom:0.25mm solid #000;
-    padding:0.8mm 1.5mm;
-    min-height:5.5mm;
-  }
+  html,body{height:auto!important;overflow:visible!important;background:#fff;-webkit-print-color-adjust:exact}
+  .tools,.fab,.hint,.inputPanel,.btns,#tantoPanel,.tg{display:none!important}
+  .app{display:block!important}
+  .sidebar{width:100%!important;box-shadow:none!important;page-break-after:always!important}
+  .head{padding:1.5mm 0;margin-bottom:2.5mm;border-bottom:0.5mm solid #000}
+  .head h1{font-size:15pt;font-weight:800}
+  .form{padding:0!important;margin:0!important;font-size:11pt;line-height:1.3}
+  .f{margin-bottom:2.3mm}
+  .f label{font-size:9.5pt;font-weight:700;margin-bottom:0.7mm}
+  .f input,.f select,.f textarea{font-size:10.5pt;padding:1.3mm 1.8mm;border:0.28mm solid #000;border-radius:1mm;height:auto;line-height:1.25}
+  textarea#biko{height:18mm!important}
+  .grid2{gap:2mm}
+  .chk label{font-size:9.5pt;padding:1.3mm 3mm;border-width:1px!important}
+  .mapwrap{display:block!important;position:relative!important;page-break-before:auto!important}
+  #map{width:100%!important;height:250mm!important;margin-top:20mm}
+  .map-print-header{display:block!important;position:absolute!important;top:0;left:0;width:100%;padding:2.5mm 4mm 1.5mm;background:#fff;z-index:9999;border-bottom:0.5mm solid #000;box-sizing:border-box}
+  .map-print-header .mph-row{display:flex;align-items:baseline;margin-bottom:1.2mm}
+  .map-print-header .mph-label{font-size:9pt;font-weight:700;color:#000;width:16mm;flex-shrink:0;border:0.25mm solid #000;padding:0.8mm 1.5mm;background:#f3f4f6;text-align:center;margin-right:2.5mm}
+  .map-print-header .mph-val{font-size:13pt;font-weight:800;color:#000;flex:1;border-bottom:0.25mm solid #000;padding:0.8mm 1.5mm;min-height:5.5mm}
 }
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head><body>
 <div class="app">
 <div class="sidebar" id="sb">
-<div class="head"><h1>電力申請 v53.3 <button class="tg" id="close">✕</button></h1>
+<div class="head"><h1>電力申請 v54.4 <button class="tg" id="close">✕</button></h1>
 <div class="btns"><button id="gps">GPS</button><button id="save">💾保存</button><button id="load">📂読込</button><button id="share">📤共有</button><button id="screenshot">📸スクショ</button><button id="print">🖨️印刷</button><button id="clear">🗑️全消</button></div></div>
 <div class="form">
 <div class="f"><label>現場名</label><input id="genba" placeholder="〇〇邸新築工事"></div>
@@ -371,221 +281,85 @@ html,body{height:100%;margin:0;overflow:hidden;font-family:-apple-system,BlinkMa
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 const $=i=>document.getElementById(i),sb=$('sb'),hint=$('hint');
+function escapeHTML(str){
+  return String(str||'').replace(/[&<>"']/g, s => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  }[s]));
+}
 const show=t=>{hint.textContent=t;hint.classList.add('show');setTimeout(()=>hint.classList.remove('show'),1200)};
 $('close').onclick=()=>{sb.classList.add('hidden');setTimeout(()=>map.invalidateSize(),200)};
 $('open').onclick=()=>{sb.classList.remove('hidden');setTimeout(()=>map.invalidateSize(),200)};
 const map=L.map('map',{zoomControl:false}).setView([38.2686,140.8722],16);
+map.doubleClickZoom.disable();
 L.control.zoom({position:'topright'}).addTo(map);
-const osm = L.tileLayer('https://tile.openstreetmap.jp/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'});
 const gsi = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png',{maxZoom:18,attribution:'国土地理院'});
-osm.addTo(map);
+const photo = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg',{maxZoom:18,attribution:'国土地理院写真'});
+const osm = L.tileLayer('https://tile.openstreetmap.jp/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'});
+gsi.addTo(map);
+photo.on('tileerror', ()=> {show('写真読込失敗');});
+const baseMaps = {"地図": gsi,"航空写真": photo,"OSM": osm};
+L.control.layers(baseMaps, null, {position:'topright'}).addTo(map);
 let errorCount=0;
 osm.on('tileerror',()=>{ errorCount++; if(errorCount>3){ map.removeLayer(osm); gsi.addTo(map); show('OSM不調→地理院に切替'); }});
 setTimeout(()=>map.invalidateSize(),500);
 const layer=L.layerGroup().addTo(map);
-
-// コメント長押し編集
 let pressTimer=null;
-map.on('contextmenu', e=>{ // PC右クリック
-  const target = e.originalEvent.target;
-  if(target && target.classList.contains('comment-text')){
-    target.contentEditable='true';
-    target.focus();
-    show('編集モード');
-  }
-});
-map.on('touchstart', e=>{
-  if(tool !== null) return;
-  pressTimer = setTimeout(()=>{
-    const target = e.originalEvent.target;
-    if(target && target.classList.contains('comment-text')){
-      target.contentEditable='true';
-      target.focus();
-      const range = document.createRange();
-      range.selectNodeContents(target);
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-      show('編集モード');
-    }
-  }, 600);
-});
-map.on('touchend touchmove', ()=>{
-  clearTimeout(pressTimer);
-});
-
+map.on('contextmenu', e=>{const target = e.originalEvent.target;if(target && target.classList.contains('comment-text')){target.contentEditable='true';target.focus();show('編集モード');}});
+map.on('touchstart', e=>{if(tool !== 'comment') return;pressTimer = setTimeout(()=>{const target = e.originalEvent.target;if(target && target.classList.contains('comment-text')){target.contentEditable='true';target.focus();const range = document.createRange();range.selectNodeContents(target);const sel = window.getSelection();sel.removeAllRanges();sel.addRange(range);show('編集モード');}}, 600);});
+map.on('touchend touchmove', ()=>{clearTimeout(pressTimer);});
 let tool=null,tmp=[],dot=null,stack=[];
 document.querySelectorAll('.tools button[data-t]').forEach(b=>b.onclick=()=>{tool=tool===b.dataset.t?null:b.dataset.t;document.querySelectorAll('.tools button').forEach(x=>x.classList.remove('on'));if(tool)b.classList.add('on');if(dot){map.removeLayer(dot);dot=null}tmp=[];show(tool||'解除')});
 const panel=$('panel'),pinput=$('pinput');let pend=null;
 pinput.onkeydown = e=>{if(e.key==='Enter')$('pok').click();};
 $('pcancel').onclick=()=>{panel.classList.remove('show');pend=null};
-$('pok').onclick=()=>{if(!pend)return;const v=pinput.value||'';const ll=pend.ll;if(pend.t==='comment'){const m=L.marker(ll,{draggable:true,icon:L.divIcon({className:'',html:`<div class="comment-text" contenteditable="false">${v||'コメント'}</div>`,iconSize:[0,0]})}).addTo(layer);m._commentText = v || 'コメント'; m.on('add', ()=>{ const el=m.getElement(); if(el){ const ct=el.querySelector('.comment-text'); if(ct){ ct.addEventListener('input', e=>{ m._commentText = e.target.innerText; }); } } }); stack.push(m)}else{const isP=pend.t==='pole';const html=`<div style="width:${isP?14:16}px;height:${isP?14:16}px;border:3px solid ${isP?'#000':'red'};background:#fff;border-radius:50%"></div>`;const m=L.marker(ll,{draggable:true,icon:L.divIcon({className:'',html,iconSize:[14,14],iconAnchor:[7,7]})}).addTo(layer);if(v)m.bindTooltip(v,{permanent:true,direction:'top',offset:[0,-10],className:'pole-label'}).openTooltip();stack.push(m)}panel.classList.remove('show');pend=null};
+$('pok').onclick=()=>{if(!pend)return;const v=pinput.value||'';const ll=pend.ll;if(pend.t==='comment'){const m=L.marker(ll,{draggable:true,icon:L.divIcon({className:'',html:`<div class="comment-text" contenteditable="false">${escapeHTML(v||'コメント')}</div>`,iconSize:[0,0]})}).addTo(layer);m._commentText = v || 'コメント'; m.on('add', ()=>{ const el=m.getElement(); if(el){ const ct=el.querySelector('.comment-text'); if(ct){ ct.addEventListener('input', e=>{ m._commentText = e.target.innerText; }); } } }); stack.push(m)}else{const isP=pend.t==='pole';const html=`<div style="width:${isP?22:24}px;height:${isP?22:24}px;border:3px solid ${isP?'#000':'red'};background:#fff;border-radius:50%"></div>`;const m=L.marker(ll,{draggable:true,icon:L.divIcon({className:'',html,iconSize:[22,22],iconAnchor:[11,11]})}).addTo(layer);if(v)m.bindTooltip(v,{permanent:true,direction:'top',offset:[0,-10],className:'pole-label'}).openTooltip();stack.push(m)}panel.classList.remove('show');pend=null};
 function open(t,ll){pend={t,ll};$('ptitle').textContent=t==='pole'?'電柱番号':t==='trans'?'トランス番号':'コメント';pinput.value=t==='pole'?$('hikikomi_basho').value:t==='trans'?$('trans_basho').value:'';panel.classList.add('show');pinput.focus()}
 let bldStart=null, bldRect=null;
-
-// PC
-map.on('mousedown', e=>{
-  if(tool!=='bld') return;
-  bldStart=e.latlng;
-  map.dragging.disable();
-});
-map.on('mousemove', e=>{
-  if(tool!=='bld' || !bldStart) return;
-  if(bldRect) map.removeLayer(bldRect);
-  bldRect = L.rectangle([bldStart, e.latlng], {
-    color:'#2563eb', weight:3, fillOpacity:.25, dashArray:'5,5'
-  }).addTo(map);
-});
-map.on('mouseup', e=>{
-  if(tool!=='bld' || !bldStart) return;
-  map.dragging.enable();
-  if(bldRect){ map.removeLayer(bldRect); bldRect=null; }
-  const r = L.rectangle([bldStart, e.latlng], {
-    color:'#2563eb', weight:3, fillOpacity:.2
-  }).addTo(layer);
-  stack.push(r);
-  bldStart=null;
-  show('建物配置');
-});
-
-// スマホ対応（追加）
-map.on('touchstart', e=>{
-  if(tool!=='bld') return;
-  bldStart=e.latlng;
-  map.dragging.disable();
-});
-map.on('touchmove', e=>{
-  if(tool!=='bld' || !bldStart) return;
-  if(bldRect) map.removeLayer(bldRect);
-  bldRect = L.rectangle([bldStart, e.latlng], {
-    color:'#2563eb', weight:3, fillOpacity:.25, dashArray:'5,5'
-  }).addTo(map);
-});
-map.on('touchend', e=>{
-  if(tool!=='bld' || !bldStart) return;
-  map.dragging.enable();
-  if(bldRect){ map.removeLayer(bldRect); bldRect=null; }
-  const r = L.rectangle([bldStart, e.latlng], {
-    color:'#2563eb', weight:3, fillOpacity:.2
-  }).addTo(layer);
-  stack.push(r);
-  bldStart=null;
-  show('建物配置');
-});
-function handleMapTap(e){
-  if(!tool) return;
-  const ll = e.latlng;
-
-  if(tool==='pole'||tool==='trans'||tool==='comment'){
-    open(tool,ll);
-    return;
-  }
-
-  if(['line','hline','hikikomi'].includes(tool)){
-    if(!tmp.length){
-      tmp.push(ll);
-      dot = L.circleMarker(ll,{
-        radius:5,color:'red',fillColor:'yellow',fillOpacity:1
-      }).addTo(map);
-    }else{
-      tmp.push(ll);
-      const col = {
-        line:'#000',
-        hline:'#7c3aed',
-        hikikomi:'#dc2626'
-      }[tool];
-
-      const l = L.polyline(tmp,{
-        color:col,
-        weight:4
-      }).addTo(layer);
-
-      stack.push(l);
-      map.removeLayer(dot);
-      dot=null;
-      tmp=[];
-    }
-  }
-}
-
-map.on('click', function(e){
-  handleMapTap(e);
-});
-
-
+map.on('mousedown', e=>{if(tool!=='bld') return;bldStart=e.latlng;map.dragging.disable();});
+map.on('mousemove', e=>{if(tool!=='bld' || !bldStart) return;if(bldRect) map.removeLayer(bldRect);bldRect = L.rectangle([bldStart, e.latlng], {color:'#2563eb', weight:3, fillOpacity:.25, dashArray:'5,5'}).addTo(map);});
+map.on('mouseup', e=>{if(tool!=='bld' || !bldStart) return;map.dragging.enable();if(bldRect){ map.removeLayer(bldRect); bldRect=null; }const r = L.rectangle([bldStart, e.latlng], {color:'#2563eb', weight:3, fillOpacity:.2}).addTo(layer);stack.push(r);bldStart=null;show('建物配置');});
+map.on('touchstart', e=>{if(tool!=='bld') return;if(e.touches && e.touches.length > 1) return;bldStart=e.latlng;map.dragging.disable();});
+map.on('touchmove', e=>{if(tool!=='bld' || !bldStart) return;if(bldRect) map.removeLayer(bldRect);bldRect = L.rectangle([bldStart, e.latlng], {color:'#2563eb', weight:3, fillOpacity:.25, dashArray:'5,5'}).addTo(map);});
+map.on('touchend', e=>{if(tool!=='bld' || !bldStart) return;map.dragging.enable();if(bldRect){ map.removeLayer(bldRect); bldRect=null; }const r = L.rectangle([bldStart, e.latlng], {color:'#2563eb', weight:3, fillOpacity:.2}).addTo(layer);stack.push(r);bldStart=null;show('建物配置');});
+function handleMapTap(e){if(!tool) return;const ll = e.latlng;if(tool==='pole'||tool==='trans'||tool==='comment'){open(tool,ll);return;}if(['line','hline','hikikomi'].includes(tool)){if(!tmp.length){tmp.push(ll);dot = L.circleMarker(ll,{radius:5,color:'red',fillColor:'yellow',fillOpacity:1}).addTo(map);}else{tmp.push(ll);const col = {line:'#000',hline:'#7c3aed',hikikomi:'#dc2626'}[tool];const l = L.polyline(tmp,{color:col,weight:4}).addTo(layer);stack.push(l);if(stack.length>300)stack.shift();map.removeLayer(dot);dot=null;tmp=[];}}}
+let lastTouchTime = 0;
+map.on('click', function(e){if('ontouchstart' in window) return;handleMapTap(e);});
+const TAP_DELAY = 200;
+let lastTap = 0;
+map.on('touchend', function(e){const now = Date.now();if(now - lastTap < TAP_DELAY) return;lastTap = now;if(tool === 'bld') return;if(!tool) return;if(touchMoved) return;if(e.latlng){handleMapTap(e);}});
+let touchMoved = false;
+let touchStartPos = null;
+map.on('touchstart', function(e){touchMoved = false;if(e.touches && e.touches[0]){touchStartPos = e.touches[0];}});
+map.on('touchmove', function(e){if(!touchStartPos || !e.touches[0]) return;const dx = Math.abs(e.touches[0].clientX - touchStartPos.clientX);const dy = Math.abs(e.touches[0].clientY - touchStartPos.clientY);if(dx > 30 || dy > 30){touchMoved = true;}});
 $('undo').onclick=()=>{const l=stack.pop();if(l)layer.removeLayer(l)};
 $('undo').oncontextmenu = (e)=>{e.preventDefault();if(confirm('すべて戻しますか？')){while(stack.length){layer.removeLayer(stack.pop());}}};
-$('gps').onclick=()=>navigator.geolocation.getCurrentPosition(p=>map.setView([p.coords.latitude,p.coords.longitude],18),()=>show('位置取得できません'),{enableHighAccuracy:true,timeout:10000});
-$('addrSearch').onclick=async()=>{
-  const q=$('jusho').value.trim();
-  if(!q){show('住所入力');return}
-  show('検索中...');
-  try{
-    const res=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=jp&q='+encodeURIComponent(q),{headers:{'Accept-Language':'ja'}});
-    const data=await res.json();
-    if(data && data.length){
-      const p=data[0];
-      map.setView([+p.lat, +p.lon], 18);
-      L.marker([+p.lat, +p.lon]).addTo(layer).bindPopup(p.display_name).openPopup();
-      show('移動しました');
-    }else{
-      // fallback GSI
-      const res2=await fetch('https://msearch.gsi.go.jp/address-search/?q='+encodeURIComponent(q));
-      const d2=await res2.json();
-      if(d2 && d2.length){
-        const [lon,lat]=d2[0].geometry.coordinates;
-        map.setView([lat,lon],18);
-        show('移動しました');
-      }else show('見つからず');
-    }
-  }catch(e){show('検索エラー')}
-};
-
+$('gps').onclick=()=>{if(!navigator.geolocation){show('GPS未対応');return}navigator.geolocation.getCurrentPosition(p=>map.setView([p.coords.latitude,p.coords.longitude],map.getZoom()||18),()=>show('位置取得できません'),{enableHighAccuracy:true,timeout:10000})};
+$('addrSearch').onclick=async()=>{const q=$('jusho').value.trim();if(!q){show('住所入力');return}show('検索中...');try{const res=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=jp&q='+encodeURIComponent(q),{headers:{'Accept-Language':'ja'}});const data=await res.json();if(data && data.length){const p=data[0];map.setView([+p.lat, +p.lon], 18);L.marker([+p.lat, +p.lon]).addTo(layer).bindPopup(p.display_name).openPopup();show('移動しました');}else{const res2=await fetch('https://msearch.gsi.go.jp/address-search/?q='+encodeURIComponent(q));const d2=await res2.json();if(d2 && d2.length){const [lon,lat]=d2[0].geometry.coordinates;map.setView([lat,lon],18);show('移動しました');}else show('見つからず');}}catch(e){show('検索エラー')}};
 $('save').onclick=()=>{try{const data={form:{},layers:[]};['genba','company','tanto','tanto_free','jusho','koji','kyokyu','keiyaku','amp','dv','sz','dv_len','hikikomi_basho','trans_basho','trans1','trans2','biko','juten','kensa','meter','h1','h2','h3','e1','e2','e3','e4','e5','e6'].forEach(id=>{const el=$(id);if(el)data.form[id]=el.type==='checkbox'?el.checked:el.value});layer.eachLayer(l=>{if(l.getLatLng&&l.options.icon){const html=l.options.icon.options.html||'';if(html.includes('comment-text')){data.layers.push({t:'comment',lat:l.getLatLng().lat,lng:l.getLatLng().lng,text: l._commentText || ''})}else{const isPole=html.includes('#000');data.layers.push({t:isPole?'pole':'trans',lat:l.getLatLng().lat,lng:l.getLatLng().lng,name:l.getTooltip?l.getTooltip().getContent()||'':''})}}else if(l.getLatLngs){const pts=l.getLatLngs();const flat=(Array.isArray(pts[0])?pts[0]:pts).map(p=>[p.lat,p.lng]);data.layers.push({t:'poly',pts:flat,color:l.options.color})}});const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download = (data.form.genba||'申請') + '_' + new Date().toISOString().slice(0,10) + '.json';a.click();show('端末に保存')}catch(e){alert(e)}};
-$('load').onclick=()=>{const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=e=>{const f=e.target.files[0];const r=new FileReader();r.onload=ev=>{const d=JSON.parse(ev.target.result);Object.entries(d.form||{}).forEach(([k,v])=>{const el=$(k);if(el){if(el.type==='checkbox')el.checked=v;else el.value=v}});layer.clearLayers();stack=[];(d.layers||[]).forEach(it=>{if(it.t==='pole'||it.t==='trans'){const isP=it.t==='pole';const html=`<div style="width:${isP?14:16}px;height:${isP?14:16}px;border:3px solid ${isP?'#000':'red'};background:#fff;border-radius:50%"></div>`;const m=L.marker([it.lat,it.lng],{draggable:true,icon:L.divIcon({className:'',html,iconSize:[14,14],iconAnchor:[7,7]})}).addTo(layer);if(it.name)m.bindTooltip(it.name,{permanent:true,direction:'top',offset:[0,-10],className:'pole-label'}).openTooltip();stack.push(m)}else if(it.t==='poly'){stack.push(L.polyline(it.pts,{color:it.color,weight:4}).addTo(layer))}else if(it.t==='comment'){const m=L.marker([it.lat,it.lng],{draggable:true,icon:L.divIcon({className:'',html:`<div class="comment-text" contenteditable="false">${it.text}</div>`,iconSize:[0,0]})}).addTo(layer);m._commentText = it.text || ''; m.on('add', ()=>{ const el=m.getElement(); if(el){ const ct=el.querySelector('.comment-text'); if(ct){ ct.addEventListener('input', e=>{ m._commentText = e.target.innerText; }); } } }); stack.push(m)}});show('読込完了')};r.readAsText(f)};i.click()};
+$('load').onclick=()=>{const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=e=>{const f=e.target.files[0];const r=new FileReader();r.onload=ev=>{let d;try{d=JSON.parse(ev.target.result)}catch(e){alert('ファイルが壊れています');return};Object.entries(d.form||{}).forEach(([k,v])=>{const el=$(k);if(el){if(el.type==='checkbox')el.checked=v;else el.value=v}});layer.clearLayers();stack=[];(d.layers||[]).forEach(it=>{if(it.t==='pole'||it.t==='trans'){const isP=it.t==='pole';const html=`<div style="width:${isP?22:24}px;height:${isP?22:24}px;border:3px solid ${isP?'#000':'red'};background:#fff;border-radius:50%"></div>`;const m=L.marker([it.lat,it.lng],{draggable:true,icon:L.divIcon({className:'',html,iconSize:[22,22],iconAnchor:[11,11]})}).addTo(layer);if(it.name)m.bindTooltip(it.name,{permanent:true,direction:'top',offset:[0,-10],className:'pole-label'}).openTooltip();stack.push(m)}else if(it.t==='poly'){stack.push(L.polyline(it.pts,{color:it.color,weight:4}).addTo(layer))}else if(it.t==='comment'){const m=L.marker([it.lat,it.lng],{draggable:true,icon:L.divIcon({className:'',html:`<div class="comment-text" contenteditable="false">${escapeHTML(it.text)}</div>`,iconSize:[0,0]})}).addTo(layer);m._commentText = it.text || ''; m.on('add', ()=>{ const el=m.getElement(); if(el){ const ct=el.querySelector('.comment-text'); if(ct){ ct.addEventListener('input', e=>{ m._commentText = e.target.innerText; }); } } }); stack.push(m)}});show('読込完了')};r.readAsText(f)};i.click()};
 $('share').onclick=()=>{$('sharePanel').style.display='block';$('sharePanel').classList.add('show')};
 function closeShare(){$('sharePanel').classList.remove('show');setTimeout(()=>$('sharePanel').style.display='none',200);}
-$('shareCancel').onclick = () => {
-  closeShare();
-};
+$('shareCancel').onclick = () => {closeShare();};
 $('toLine').onclick=()=>{window.open('https://line.me/R/msg/text/?'+encodeURIComponent('【電力申請】'+$('genba').value+' '+$('jusho').value),'_blank');closeShare();};
 $('toMail').onclick=()=>{location.href='mailto:?subject='+encodeURIComponent('電力申請 '+$('genba').value)+'&body='+encodeURIComponent($('jusho').value);closeShare();};
 $('screenshot').onclick=()=>{html2canvas($('map'),{useCORS:true}).then(c=>{const a=document.createElement('a');a.href=c.toDataURL();a.download=($('genba').value||'map')+'.png';a.click()})};
-
-$('print').onclick=()=>{
-  // 1枚目:フォーム、2枚目:地図ヘッダーに情報反映
-  try {
-    $('ph_genba').textContent = $('genba').value || '';
-    const tantoVal = $('tanto').value === '__edit__' ? $('tanto_free').value : $('tanto').value;
-    $('ph_tanto').textContent = tantoVal || '';
-    $('ph_jusho').textContent = $('jusho').value || '';
-  } catch(e) { console.log(e) }
-  // サイドバー開いて地図再描画
-  sb.classList.remove('hidden');
-  map.invalidateSize();
-  // 少し待って印刷（iOS対策）
-  setTimeout(()=>{ window.print(); }, 500);
-};
-
-
+$('print').onclick=()=>{try {$('ph_genba').textContent = $('genba').value || '';const tantoVal = $('tanto').value === '__edit__' ? $('tanto_free').value : $('tanto').value;$('ph_tanto').textContent = tantoVal || '';$('ph_jusho').textContent = $('jusho').value || '';} catch(e) {}sb.classList.remove('hidden');map.invalidateSize();map.whenReady(()=>{setTimeout(()=>{map.invalidateSize();setTimeout(()=>window.print(), 500);}, 300);});};
 $('clear').onclick=()=>{if(confirm('全削除？')){layer.clearLayers();stack=[]}};
-
 $('tanto').onchange=()=>{$('tanto_free').style.display=$('tanto').value==='__edit__'?'block':'none'};
-
 const TANTO_DEFAULT=['相澤輝','相澤泰','布田','佐伯','千田','佐藤'];
-if(!localStorage.getItem('tantoList')){
-  localStorage.setItem('tantoList', JSON.stringify(TANTO_DEFAULT));
-}
-
+if(!localStorage.getItem('tantoList')){localStorage.setItem('tantoList', JSON.stringify(TANTO_DEFAULT));}
 function getTantoList(){return JSON.parse(localStorage.getItem('tantoList')||JSON.stringify(TANTO_DEFAULT));}
 function saveTantoList(list){localStorage.setItem('tantoList',JSON.stringify(list));}
 function refreshTanto(){const list=getTantoList();const s=$('tanto');s.innerHTML='<option value="">--選択--</option>'+list.map(n=>`<option>${n}</option>`).join('')+'<option value="__edit__">＋直接入力</option>';}
 function renderTantoList(){const list=getTantoList();const div=$('tantoList');div.innerHTML=list.map((n,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px;background:#fff;border:1px solid #e5e7eb;border-radius:4px;margin-bottom:3px;font-size:12px"><span>${n}</span><button data-i="${i}" class="tantoDel" style="width:40px;height:22px;background:#ef4444;color:#fff;border:none;border-radius:3px;font-size:11px">削除</button></div>`).join('');div.querySelectorAll('.tantoDel').forEach(b=>b.onclick=()=>{const i=+b.dataset.i;const l=getTantoList();l.splice(i,1);saveTantoList(l);renderTantoList();refreshTanto();});}
 refreshTanto();
-
 $('tantoEditBtn').onclick=()=>{renderTantoList();$('tantoPanel').style.display='block';$('tantoNew').value='';$('tantoNew').focus();};
 $('tantoClose').onclick=()=>{$('tantoPanel').style.display='none'};
-$('tantoAdd').onclick=()=>{const v=$('tantoNew').value.trim();if(!v)return;const l=getTantoList();if(!l.includes(v)){l.push(v);saveTantoList(l);renderTantoList();refreshTanto();$('tantoNew').value='';show('追加しました');}};
+$('tantoAdd').onclick=()=>{const v=$('tantoNew').value.trim();if(!v)return;const l=getTantoList();if(l.length>50){alert('登録上限です');return}if(!l.includes(v)){l.push(v);saveTantoList(l);renderTantoList();refreshTanto();$('tantoNew').value='';show('追加しました');}};
 $('tantoNew').onkeydown=e=>{if(e.key==='Enter'){$('tantoAdd').click()}};
 setTimeout(()=>map.invalidateSize(),500);
 </script></body></html>
