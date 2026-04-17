@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="ja"><head>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
 <!-- Playables SDK -->
 <script>// Playables SDK v1.0.0
 // Game lifecycle bridge: rAF-based game-ready detection + event communication
@@ -189,179 +191,1083 @@
   }
 })();</script>
 <script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
-
-<meta charset="UTF-8"><title>電力申請 v55.7 完全版</title>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>電気配線図トレース＆清書ツール</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-html,body{height:100%;margin:0;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;background:#f8fafc}
-.app{display:flex;height:100vh}
-.sidebar{width:360px;background:#fff;display:flex;flex-direction:column;box-shadow:2px 0 12px rgba(0,0,0,.1);transition:margin-left .3s}
-.sidebar.hidden{margin-left:-360px}
-.head{background:#1e3a8a;color:#fff;padding:10px}
-.head h1{margin:0;font-size:16px;display:flex;justify-content:space-between}
-.tg{background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:6px}
-.btns{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:6px}
-.btns button{height:32px;border:none;border-radius:6px;background:#fff;color:#1e3a8a;font-weight:600;font-size:11px}
-.form{flex:1;overflow-y:auto;padding:12px;background:#f8fafc}
-.f{margin-bottom:10px}.f label{display:block;font-size:11px;font-weight:700;margin-bottom:3px}
-.f input,.f select,.f textarea{width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;box-sizing:border-box}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.r{display:flex;gap:6px;flex-wrap:wrap}
-.chk{display:flex;flex-wrap:wrap;gap:6px}
-.chk label{display:inline-flex;align-items:center;padding:6px 10px;background:#f3f4f6;border:1.5px solid #e5e7eb;border-radius:20px;font-size:12px;cursor:pointer;transition:.15s;user-select:none}
-.chk label:has(input:checked){background:#dbeafe;border-color:#2563eb;color:#1e3a8a;font-weight:600}
-.chk label span{pointer-events:none}
-.mapwrap{flex:1;position:relative;background:#ddd}
-#map{position:absolute;inset:0;touch-action:none}
-.tools{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:#fff;padding:5px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.2);display:flex;gap:4px;z-index:500}
-.tools button{height:44px;min-width:52px;border:1px solid #e5e7eb;background:#f9fafb;border-radius:6px;font-size:10px}
-.tools button.on{background:#2563eb;color:#fff}
-.fab{position:absolute;top:10px;left:10px;width:40px;height:40px;background:#1e3a8a;color:#fff;border:none;border-radius:6px;font-size:18px;z-index:700}
-.hint{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:6px 12px;border-radius:6px;opacity:0;transition:.2s}
-.hint.show{opacity:1}
-.pole-label{background:#22c55e;color:#fff;padding:3px 8px;border-radius:4px;font-size:11px;border:1px solid #166534;white-space:normal;max-width:200px;word-break:break-all;line-height:1.3}
-.comment-text{color:#16a34a;font-weight:700;font-size:14px;text-shadow:0 0 2px #fff;white-space:nowrap}
-.map-print-header{display:none}
-.inputPanel{position:absolute;top:60px;left:50%;transform:translateX(-50%);background:#fff;padding:16px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.3);z-index:800;display:none;min-width:280px;width:88vw;max-width:340px}
-.inputPanel.show{display:block}.inputPanel input{width:100%;padding:12px;border:2px solid #2563eb;border-radius:8px;margin-bottom:10px;font-size:16px;box-sizing:border-box}
-.inputPanel button{flex:1;height:36px;border:none;border-radius:6px;font-weight:600}
-.ok{background:#2563eb;color:#fff}.cancel{background:#e5e7eb}
-@media print{
-  @page{size:A4;margin:5mm}
-  html,body{height:auto!important;overflow:visible!important;background:#fff;-webkit-print-color-adjust:exact}
-  .tools,.fab,.hint,.inputPanel,.btns,#tantoPanel,.tg{display:none!important}
-  .app{display:block!important}
-  .sidebar{width:100%!important;box-shadow:none!important;page-break-after:always!important}
-  .head{padding:1.5mm 0;margin-bottom:2.5mm;border-bottom:0.5mm solid #000}
-  .head h1{font-size:15pt;font-weight:800}
-  .form{padding:0!important;margin:0!important;font-size:11pt;line-height:1.3}
-  .f{margin-bottom:2.3mm}
-  .f label{font-size:9.5pt;font-weight:700;margin-bottom:0.7mm}
-  .f input,.f select,.f textarea{font-size:10.5pt;padding:1.3mm 1.8mm;border:0.28mm solid #000;border-radius:1mm;height:auto;line-height:1.25}
-  textarea#biko{height:18mm!important}
-  .grid2{gap:2mm}
-  .chk label{font-size:9.5pt;padding:1.3mm 3mm;border-width:1px!important}
-  .mapwrap{display:block!important;position:relative!important;page-break-before:auto!important}
-  #map{width:100%!important;height:250mm!important;margin-top:20mm}
-  .map-print-header{display:block!important;position:absolute!important;top:0;left:0;width:100%;padding:2.5mm 4mm 1.5mm;background:#fff;z-index:9999;border-bottom:0.5mm solid #000;box-sizing:border-box}
-  .map-print-header .mph-row{display:flex;align-items:baseline;margin-bottom:1.2mm}
-  .map-print-header .mph-label{font-size:9pt;font-weight:700;color:#000;width:16mm;flex-shrink:0;border:0.25mm solid #000;padding:0.8mm 1.5mm;background:#f3f4f6;text-align:center;margin-right:2.5mm}
-  .map-print-header .mph-val{font-size:13pt;font-weight:800;color:#000;flex:1;border-bottom:0.25mm solid #000;padding:0.8mm 1.5mm;min-height:5.5mm}
-}
+  * {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+  }
+  canvas {
+    touch-action: none;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+  .step-active {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  }
+  .symbol-btn.active {
+    background: #dbeafe;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #2563eb;
+    cursor: pointer;
+    border-radius: 50%;
+  }
+  .canvas-container {
+    background-image: 
+      linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
+      linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+      linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  }
 </style>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-</head><body>
-<div class="app">
-<div class="sidebar" id="sb">
-<div class="head"><h1>電力申請 v55.7 <button class="tg" id="close">✕</button></h1>
-<div class="btns"><button id="gps">GPS</button><button id="save">💾保存</button><button id="load">📂読込</button><button id="share">📤共有</button><button id="screenshot">📸スクショ</button><button id="print">🖨️印刷</button><button id="clear">🗑️全消</button></div></div>
-<div class="form">
-<div class="f"><label>現場名</label><input id="genba" placeholder="〇〇邸新築工事"></div>
-<div class="f"><label>会社名</label><input id="company" placeholder="〇〇電気工事株式会社"></div>
-<div class="f"><label>担当者</label><div style="display:flex;gap:4px"><select id="tanto" style="flex:1"><option value="">--選択--</option></select><button type="button" id="tantoEditBtn" style="width:48px;height:32px;border:1px solid #d1d5db;border-radius:6px;background:#f3f4f6;font-size:11px">編集</button></div><input id="tanto_free" placeholder="直接入力" style="margin-top:4px;display:none"><div id="tantoPanel" style="display:none;margin-top:6px;padding:8px;background:#f9fafb;border:1px solid #ddd;border-radius:6px"><div style="font-size:11px;font-weight:600;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center"><span>担当者リスト</span><button id="tantoClose" style="border:none;background:none;font-size:16px">×</button></div><div id="tantoList" style="max-height:120px;overflow-y:auto;margin-bottom:6px"></div><div style="display:flex;gap:4px"><input id="tantoNew" placeholder="名前を追加" style="flex:1;padding:4px;border:1px solid #ccc;border-radius:4px;font-size:12px"><button id="tantoAdd" style="width:50px;height:28px;background:#2563eb;color:#fff;border:none;border-radius:4px;font-size:12px">追加</button></div></div></div>
-<div class="f"><label>住所</label><div style="display:flex;gap:4px"><input id="jusho" value="宮城県" style="flex:1"><button type="button" id="addrSearch" style="width:56px;height:32px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:12px">検索</button></div></div>
-<div class="f"><label>工事種別</label><select id="koji"><option>本設</option><option>仮設</option></select></div>
-<div class="f"><label>供給方式</label><select id="kyokyu"><option>単相2線式 100V</option><option selected>単相3線式 100V/200V</option><option>三相3線式 200V</option></select></div>
-<div class="grid2"><div class="f"><label>契約種別</label><select id="keiyaku"><option>相談</option><option>従量電灯B</option><option>従量電灯C</option><option>低圧電力</option></select></div><div class="f"><label>契約容量</label><select id="amp"><option value="">選択</option><option>15A</option><option>20A</option><option>30A</option><option>40A</option><option>50A</option><option>60A</option><option>6kVA</option><option>8kVA</option><option>10kVA</option><option>12kVA</option><option>15kVA</option></select></div></div>
-<div class="f"><label>引込線</label><div class="grid2"><select id="dv"><option>DV2線</option><option selected>DV3線</option></select><select id="sz"><option>3.2mm</option><option>22mm²</option><option>38mm²</option><option>60mm²</option><option>100mm²</option></select></div><input id="dv_len" placeholder="長さ(m)" style="margin-top:6px"></div>
-<div class="grid2"><div class="f"><label>引込柱番号</label><input id="hikikomi_basho" placeholder="例:名取12号柱 北側" maxlength="50"></div><div class="f"><label>トランス柱番号</label><input id="trans_basho" placeholder="例:名取15号柱" maxlength="50"></div></div>
-<div class="grid2"><div class="f"><label>トランス1</label><select id="trans1"><option value="">-</option><option>5kVA</option><option>10kVA</option><option>15kVA</option><option>20kVA</option><option>25kVA</option><option>30kVA</option><option>40kVA</option><option>50kVA</option><option>60kVA</option><option>75kVA</option></select></div><div class="f"><label>トランス2</label><select id="trans2"><option value="">-</option><option>5kVA</option><option>10kVA</option><option>15kVA</option><option>20kVA</option><option>25kVA</option><option>30kVA</option><option>40kVA</option><option>50kVA</option><option>60kVA</option><option>75kVA</option></select></div></div>
-<div class="f"><label>区分</label><div class="chk" id="kubunGrid"><label><input type="checkbox" id="h1" hidden><span>2類</span></label><label><input type="checkbox" id="h2" hidden><span>3類</span></label><label><input type="checkbox" id="h3" hidden><span>空中分岐</span></label></div></div>
-<div class="f"><label>メーター</label><select id="meter"><option>ベージュ</option><option>グレー</option><option>なし</option></select></div>
-<div class="f"><label>設備</label><div class="chk" id="equipGrid"><label><input type="checkbox" id="e1" hidden><span>☀️太陽光</span></label><label><input type="checkbox" id="e2" hidden><span>♨️エコキュート</span></label><label><input type="checkbox" id="e3" hidden><span>🍳IH</span></label><label><input type="checkbox" id="e4" hidden><span>🚗EV</span></label><label><input type="checkbox" id="e5" hidden><span>🔋蓄電池</span></label><label><input type="checkbox" id="e6" hidden><span>🏠オール電化</span></label></div></div>
-<div class="grid2"><div class="f"><label>受点予定</label><input type="date" id="juten"></div><div class="f"><label>検査日</label><input type="date" id="kensa"></div></div>
-<div class="f"><label>備考</label><textarea id="biko" rows="2"></textarea></div>
-</div></div>
-<div class="mapwrap"><button class="fab" id="open">☰</button><div class="map-print-header" id="mapHeader"><div class="mph-row"><span class="mph-label">工事名</span><span id="ph_genba" class="mph-val"></span></div><div class="mph-row"><span class="mph-label">担当者</span><span id="ph_tanto" class="mph-val"></span><span class="mph-label" style="margin-left:10mm">住所</span><span id="ph_jusho" class="mph-val"></span></div></div><div id="map"></div>
-<div class="inputPanel" id="sharePanel" style="display:none"><div style="font-weight:700;margin-bottom:8px">共有</div><button id="toLine" style="width:100%;height:40px;background:#06c755;color:#fff;border:none;border-radius:6px;margin-bottom:6px">LINE</button><button id="toMail" style="width:100%;height:40px;background:#2563eb;color:#fff;border:none;border-radius:6px;margin-bottom:6px">メール</button><button id="shareCancel" style="width:100%;height:32px;background:#e5e7eb;border:none;border-radius:6px">閉じる</button></div>
-<div class="inputPanel" id="panel"><div id="ptitle" style="font-weight:700;margin-bottom:8px;font-size:15px">入力</div><input id="pinput"><div style="display:flex;gap:6px"><button class="cancel" id="pcancel">取消</button><button class="ok" id="pok">決定</button></div></div>
-<div class="tools"><button data-t="pole">電柱</button><button data-t="trans">トランス</button><button data-t="line">低圧</button><button data-t="hline">高圧</button><button data-t="hikikomi">引込</button><button data-t="bld">建物</button><button data-t="comment">💬コメント</button><button id="undo">↩️戻る</button></div>
-<div class="hint" id="hint"></div></div></div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script>
-const $=i=>document.getElementById(i),sb=$('sb'),hint=$('hint');
-function escapeHTML(str){
-  return String(str||'').replace(/[&<>"']/g, s => ({
-    '&':'&amp;',
-    '<':'&lt;',
-    '>':'&gt;',
-    '"':'&quot;',
-    "'":'&#39;'
-  }[s]));
-}
-const show=t=>{hint.textContent=t;hint.classList.add('show');setTimeout(()=>hint.classList.remove('show'),1200)};
-$('close').onclick=()=>{sb.classList.add('hidden');setTimeout(()=>map.invalidateSize(),200)};
-$('open').onclick=()=>{sb.classList.remove('hidden');setTimeout(()=>map.invalidateSize(),200)};
-const map=L.map('map',{zoomControl:false}).setView([38.2686,140.8722],16);
-map.doubleClickZoom.disable();
-L.control.zoom({position:'topright'}).addTo(map);
-const gsi = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png',{maxZoom:18,attribution:'国土地理院'});
-const photo = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg',{maxZoom:18,attribution:'国土地理院写真'});
-const osm = L.tileLayer('https://tile.openstreetmap.jp/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'});
-gsi.addTo(map);
-photo.on('tileerror', ()=> {show('写真読込失敗');});
-const baseMaps = {"地図": gsi,"航空写真": photo,"OSM": osm};
-L.control.layers(baseMaps, null, {position:'topright'}).addTo(map);
-let errorCount=0;
-osm.on('tileerror',()=>{ errorCount++; if(errorCount>3){ map.removeLayer(osm); gsi.addTo(map); show('OSM不調→地理院に切替'); }});
-setTimeout(()=>map.invalidateSize(),500);
-const layer=L.layerGroup().addTo(map);
-let pressTimer=null;
-map.on('contextmenu', e=>{const target = e.originalEvent.target;if(target && target.classList.contains('comment-text')){target.contentEditable='true';target.focus();show('編集モード');}});
-map.on('touchstart', e=>{if(tool !== 'comment') return;if(e.touches && e.touches.length > 1) return;pressTimer = setTimeout(()=>{const target = e.originalEvent.target;if(target && target.classList.contains('comment-text')){target.contentEditable='true';target.focus();const range = document.createRange();range.selectNodeContents(target);const sel = window.getSelection();sel.removeAllRanges();sel.addRange(range);show('編集モード');}}, 400);});
-map.on('touchend touchmove', ()=>{clearTimeout(pressTimer);});
-let tool=null,tmp=[],dot=null,stack=[];
-document.querySelectorAll('.tools button[data-t]').forEach(b=>b.onclick=()=>{tool=tool===b.dataset.t?null:b.dataset.t;document.querySelectorAll('.tools button').forEach(x=>x.classList.remove('on'));if(tool)b.classList.add('on');if(dot){map.removeLayer(dot);dot=null}tmp=[];show(tool||'解除')});
-const panel=$('panel'),pinput=$('pinput');let pend=null;
-pinput.onkeydown = e=>{if(e.key==='Enter')$('pok').click();};
-$('pcancel').onclick=()=>{panel.classList.remove('show');pend=null};
-$('pok').onclick=()=>{if(!pend)return;const v=pinput.value||'';const ll=pend.ll;if(pend.t==='comment'){const m=L.marker(ll,{draggable:true,icon:L.divIcon({className:'',html:`<div class="comment-text" contenteditable="false">${escapeHTML(v||'コメント')}</div>`,iconSize:[0,0]})}).addTo(layer);m._commentText = v || 'コメント'; m.on('add', ()=>{ const el=m.getElement(); if(el){ const ct=el.querySelector('.comment-text'); if(ct){ ct.addEventListener('input', e=>{ m._commentText = e.target.innerText; }); } } }); stack.push(m)}else{const isP=pend.t==='pole';const html=`<div style="width:${isP?22:24}px;height:${isP?22:24}px;border:3px solid ${isP?'#000':'red'};background:#fff;border-radius:50%"></div>`;const m=L.marker(ll,{draggable:true,icon:L.divIcon({className:'',html,iconSize:[22,22],iconAnchor:[11,11]})}).addTo(layer);if(v)m.bindTooltip(v,{permanent:true,direction:'top',offset:[0,-10],className:'pole-label'}).openTooltip();stack.push(m)}panel.classList.remove('show');pend=null};
-function open(t,ll){pend={t,ll};$('ptitle').textContent=t==='pole'?'電柱番号':t==='trans'?'トランス番号':'コメント';pinput.value=t==='pole'?$('hikikomi_basho').value:t==='trans'?$('trans_basho').value:'';panel.classList.add('show');pinput.focus()}
-let bldStart=null, bldRect=null;
-let isDrawingBld = false;
-map.on('mousedown', e=>{if(tool!=='bld') return;bldStart=e.latlng;map.dragging.disable();});
-map.on('mousemove', e=>{if(tool!=='bld' || !bldStart) return;if(bldRect) map.removeLayer(bldRect);bldRect = L.rectangle([bldStart, e.latlng], {color:'#2563eb', weight:3, fillOpacity:.25, dashArray:'5,5'}).addTo(map);});
-map.on('mouseup', e=>{if(tool!=='bld' || !bldStart) return;map.dragging.enable();if(bldRect){ map.removeLayer(bldRect); bldRect=null; }const r = L.rectangle([bldStart, e.latlng], {color:'#2563eb', weight:3, fillOpacity:.2}).addTo(layer);stack.push(r);bldStart=null;show('建物配置');});
-map.on('touchstart', e=>{if(tool!=='bld') return;if(e.touches && e.touches.length > 1) return;isDrawingBld = true;bldStart=e.latlng;map.dragging.disable();});
-map.on('touchmove', e=>{if(tool!=='bld' || !bldStart) return;if(bldRect) map.removeLayer(bldRect);bldRect = L.rectangle([bldStart, e.latlng], {color:'#2563eb', weight:3, fillOpacity:.25, dashArray:'5,5'}).addTo(map);});
-map.on('touchend', e=>{if(tool!=='bld' || !bldStart) return;map.dragging.enable();if(bldRect){ map.removeLayer(bldRect); bldRect=null; }const r = L.rectangle([bldStart, e.latlng], {color:'#2563eb', weight:3, fillOpacity:.2}).addTo(layer);stack.push(r);bldStart=null;isDrawingBld = false;show('建物配置');});
-function handleMapTap(e){if(!tool) return;const ll = e.latlng;if(tool==='pole'||tool==='trans'||tool==='comment'){open(tool,ll);return;}if(['line','hline','hikikomi'].includes(tool)){if(!tmp.length){tmp.push(ll);dot = L.circleMarker(ll,{radius:5,color:'red',fillColor:'yellow',fillOpacity:1}).addTo(map);}else{tmp.push(ll);const col = {line:'#000',hline:'#7c3aed',hikikomi:'#dc2626'}[tool];const l = L.polyline(tmp,{color:col,weight:4}).addTo(layer);stack.push(l);if(stack.length>300)stack.shift();map.removeLayer(dot);dot=null;tmp=[];}}}
-let lastTouchTime = 0;
-let isTouch = false;
-map.on('click', function(e){if(isTouch){isTouch = false;return;}handleMapTap(e);});
+</head>
+<body class="bg-slate-50 text-slate-800">
+<div id="app" class="min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-center gap-3">
+          <svg class="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M7 2v11h3v9l7-12h-4l4-8z"/>
+          </svg>
+          <div>
+            <h1 class="text-lg md:text-xl font-bold text-slate-900">電気配線図トレース＆清書</h1>
+            <p class="text-xs text-slate-500">JIS C 0303準拠 / PDF出力対応</p>
+          </div>
+        <div class="flex gap-2">
+          <button id="saveBtn" class="px-3 py-2 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg transition flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+            <span class="hidden sm:inline">保存</span>
+          </button>
+          <button id="loadBtn" class="px-3 py-2 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg transition flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+            <span class="hidden sm:inline">読込</span>
+          </button>
+          <input type="file" id="loadInput" accept=".json" hidden>
+        </div>
+      </div>
+    </div>
+  </header>
 
-map.on('touchend', function(e){if(isDrawingBld) return;if(tool === 'bld') return;if(!tool) return;if(touchMoved && tool !== 'line' && tool !== 'hline' && tool !== 'hikikomi') return;const touch = e.originalEvent?.changedTouches?.[0];if(!touch) return;const rect = map.getContainer().getBoundingClientRect();const point = L.point(touch.clientX - rect.left,touch.clientY - rect.top);const latlng = map.containerPointToLatLng(point);handleMapTap({ latlng });});
-let touchMoved = false;
-let touchStartPos = null;
-map.on('touchstart', function(e){isTouch = true;touchMoved = false;if(e.touches && e.touches[0]){touchStartPos = e.touches[0];}});
-map.on('movestart', ()=>{ touchMoved = true; });
-map.on('touchmove', function(e){if(!touchStartPos || !e.touches[0]) return;const dx = Math.abs(e.touches[0].clientX - touchStartPos.clientX);const dy = Math.abs(e.touches[0].clientY - touchStartPos.clientY);if(dx > 20 || dy > 20){touchMoved = true;}});
-$('undo').onclick=()=>{const l=stack.pop();if(l)layer.removeLayer(l)};
-$('undo').oncontextmenu = (e)=>{e.preventDefault();if(confirm('すべて戻しますか？')){while(stack.length){layer.removeLayer(stack.pop());}}};
-$('gps').onclick=()=>{if(!navigator.geolocation){show('GPS未対応');return}navigator.geolocation.getCurrentPosition(p=>map.setView([p.coords.latitude,p.coords.longitude],map.getZoom()||18),()=>show('位置取得できません'),{enableHighAccuracy:true,timeout:10000})};
-$('addrSearch').onclick=async()=>{const q=$('jusho').value.trim();if(!q){show('住所入力');return}show('検索中...');try{const res=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=jp&q='+encodeURIComponent(q),{headers:{'Accept-Language':'ja'}});const data=await res.json();if(data && data.length){const p=data[0];map.setView([+p.lat, +p.lon], 18);L.marker([+p.lat, +p.lon]).addTo(layer).bindPopup(p.display_name).openPopup();show('移動しました');}else{const res2=await fetch('https://msearch.gsi.go.jp/address-search/?q='+encodeURIComponent(q));const d2=await res2.json();if(d2 && d2.length){const [lon,lat]=d2[0].geometry.coordinates;map.setView([lat,lon],18);show('移動しました');}else show('見つからず');}}catch(e){show('検索エラー')}};
-$('save').onclick=()=>{try{const data={form:{},layers:[]};['genba','company','tanto','tanto_free','jusho','koji','kyokyu','keiyaku','amp','dv','sz','dv_len','hikikomi_basho','trans_basho','trans1','trans2','biko','juten','kensa','meter','h1','h2','h3','e1','e2','e3','e4','e5','e6'].forEach(id=>{const el=$(id);if(el)data.form[id]=el.type==='checkbox'?el.checked:el.value});layer.eachLayer(l=>{if(l.getLatLng&&l.options.icon){const html=l.options.icon.options.html||'';if(html.includes('comment-text')){data.layers.push({t:'comment',lat:l.getLatLng().lat,lng:l.getLatLng().lng,text: l._commentText || ''})}else{const isPole=html.includes('#000');data.layers.push({t:isPole?'pole':'trans',lat:l.getLatLng().lat,lng:l.getLatLng().lng,name:l.getTooltip?l.getTooltip().getContent()||'':''})}}else if(l.getLatLngs){const pts=l.getLatLngs();const flat=(Array.isArray(pts[0])?pts[0]:pts).map(p=>[p.lat,p.lng]);data.layers.push({t:'poly',pts:flat,color:l.options.color})}});const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download = (data.form.genba||'申請') + '_' + new Date().toISOString().slice(0,10) + '.json';a.click();show('端末に保存')}catch(e){alert(e)}};
-$('load').onclick=()=>{const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=e=>{const f=e.target.files[0];const r=new FileReader();r.onload=ev=>{let d;try{d=JSON.parse(ev.target.result)}catch(e){alert('ファイルが壊れています');return};Object.entries(d.form||{}).forEach(([k,v])=>{const el=$(k);if(el){if(el.type==='checkbox')el.checked=v;else el.value=v}});layer.clearLayers();stack=[];(d.layers||[]).forEach(it=>{if(it.t==='pole'||it.t==='trans'){const isP=it.t==='pole';const html=`<div style="width:${isP?22:24}px;height:${isP?22:24}px;border:3px solid ${isP?'#000':'red'};background:#fff;border-radius:50%"></div>`;const m=L.marker([it.lat,it.lng],{draggable:true,icon:L.divIcon({className:'',html,iconSize:[22,22],iconAnchor:[11,11]})}).addTo(layer);if(it.name)m.bindTooltip(it.name,{permanent:true,direction:'top',offset:[0,-10],className:'pole-label'}).openTooltip();stack.push(m)}else if(it.t==='poly'){stack.push(L.polyline(it.pts,{color:it.color,weight:4}).addTo(layer))}else if(it.t==='comment'){const m=L.marker([it.lat,it.lng],{draggable:true,icon:L.divIcon({className:'',html:`<div class="comment-text" contenteditable="false">${escapeHTML(it.text)}</div>`,iconSize:[0,0]})}).addTo(layer);m._commentText = it.text || ''; m.on('add', ()=>{ const el=m.getElement(); if(el){ const ct=el.querySelector('.comment-text'); if(ct){ ct.addEventListener('input', e=>{ m._commentText = e.target.innerText; }); } } }); stack.push(m)}});show('読込完了')};r.readAsText(f)};i.click()};
-$('share').onclick=()=>{$('sharePanel').style.display='block';$('sharePanel').classList.add('show')};
-function closeShare(){$('sharePanel').classList.remove('show');setTimeout(()=>$('sharePanel').style.display='none',200);}
-$('shareCancel').onclick = () => {closeShare();};
-$('toLine').onclick=()=>{window.open('https://line.me/R/msg/text/?'+encodeURIComponent('【電力申請】'+$('genba').value+' '+$('jusho').value),'_blank');closeShare();};
-$('toMail').onclick=()=>{location.href='mailto:?subject='+encodeURIComponent('電力申請 '+$('genba').value)+'&body='+encodeURIComponent($('jusho').value);closeShare();};
-$('screenshot').onclick=()=>{html2canvas($('map'),{useCORS:true}).then(c=>{const a=document.createElement('a');a.href=c.toDataURL();a.download=($('genba').value||'map')+'.png';a.click()})};
-$('print').onclick=()=>{try {$('ph_genba').textContent = $('genba').value || '';const tantoVal = $('tanto').value === '__edit__' ? $('tanto_free').value : $('tanto').value;$('ph_tanto').textContent = tantoVal || '';$('ph_jusho').textContent = $('jusho').value || '';} catch(e) {}sb.classList.remove('hidden');map.invalidateSize();map.whenReady(()=>{setTimeout(()=>{map.invalidateSize();setTimeout(()=>window.print(), 500);}, 300);});};
-$('clear').onclick=()=>{if(confirm('全削除？')){layer.clearLayers();stack=[]}};
-$('tanto').onchange=()=>{$('tanto_free').style.display=$('tanto').value==='__edit__'?'block':'none'};
-const TANTO_DEFAULT=['相澤輝','相澤泰','布田','佐伯','千田','佐藤'];
-if(!localStorage.getItem('tantoList')){localStorage.setItem('tantoList', JSON.stringify(TANTO_DEFAULT));}
-function getTantoList(){return JSON.parse(localStorage.getItem('tantoList')||JSON.stringify(TANTO_DEFAULT));}
-function saveTantoList(list){localStorage.setItem('tantoList',JSON.stringify(list));}
-function refreshTanto(){const list=getTantoList();const s=$('tanto');s.innerHTML='<option value="">--選択--</option>'+list.map(n=>`<option>${n}</option>`).join('')+'<option value="__edit__">＋直接入力</option>';}
-function renderTantoList(){const list=getTantoList();const div=$('tantoList');div.innerHTML=list.map((n,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px;background:#fff;border:1px solid #e5e7eb;border-radius:4px;margin-bottom:3px;font-size:12px"><span>${n}</span><button data-i="${i}" class="tantoDel" style="width:40px;height:22px;background:#ef4444;color:#fff;border:none;border-radius:3px;font-size:11px">削除</button></div>`).join('');div.querySelectorAll('.tantoDel').forEach(b=>b.onclick=()=>{const i=+b.dataset.i;const l=getTantoList();l.splice(i,1);saveTantoList(l);renderTantoList();refreshTanto();});}
-refreshTanto();
-$('tantoEditBtn').onclick=()=>{renderTantoList();$('tantoPanel').style.display='block';$('tantoNew').value='';$('tantoNew').focus();};
-$('tantoClose').onclick=()=>{$('tantoPanel').style.display='none'};
-$('tantoAdd').onclick=()=>{const v=$('tantoNew').value.trim();if(!v)return;const l=getTantoList();if(l.length>50){alert('登録上限です');return}if(!l.includes(v)){l.push(v);saveTantoList(l);renderTantoList();refreshTanto();$('tantoNew').value='';show('追加しました');}};
-$('tantoNew').onkeydown=e=>{if(e.key==='Enter'){$('tantoAdd').click()}};
-setTimeout(()=>map.invalidateSize(),500);
-</script></body></html>
+  <!-- Step Navigation -->
+  <div class="bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 py-3">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <button class="step-btn step-active px-3 py-2 rounded-lg text-sm font-medium transition" data-step="1">
+          1. 画像読込
+        </button>
+        <button class="step-btn px-3 py-2 rounded-lg text-sm font-medium bg-slate-100 hover:bg-slate-200 transition" data-step="2">
+          2. 記号配置
+        </button>
+        <button class="step-btn px-3 py-2 rounded-lg text-sm font-medium bg-slate-100 hover:bg-slate-200 transition" data-step="3">
+          3. 配線
+        </button>
+        <button class="step-btn px-3 py-2 rounded-lg text-sm font-medium bg-slate-100 hover:bg-slate-200 transition" data-step="4">
+          4. PDF出力
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="flex-1 max-w-7xl w-full mx-auto p-4">
+    <div class="grid lg:grid-cols-4 gap-4">
+      
+      <!-- Sidebar Controls -->
+      <div class="lg:col-span-1 space-y-4">
+        
+        <!-- Step 1: 画像読込 -->
+        <div id="panel-1" class="step-panel bg-white rounded-xl shadow-sm border-slate-200 p-4">
+          <h3 class="font-bold text-slate-900 mb-3 flex items-center gap-2">
+            <span class="flex items-center justify-center w-6 h-6 bg-blue-600 text-white text-xs rounded-full">1</span>
+            画像読込
+          </h3>
+          <label class="block">
+            <input type="file" id="imageInput" accept="image/*" class="hidden">
+            <div class="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition">
+              <svg class="w-10 h-10 mx-auto text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              <p class="text-sm text-slate-600 font-medium">配線図をアップロード</p>
+              <p class="text-xs text-slate-400 mt-1">クリックまたはドロップ</p>
+            </div>
+          </label>
+          <div id="imageControls" class="mt-4 space-y-3 hidden">
+            <div>
+              <label class="text-xs text-slate-600 font-medium">不透明度: <span id="opacityVal">50</span>%</label>
+              <input type="range" id="opacitySlider" min="0" max="100" value="50" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+              <label class="text-xs text-slate-600 font-medium">コントラスト: <span id="contrastVal">100</span>%</label>
+              <input type="range" id="contrastSlider" min="50" max="200" value="100" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <button id="perspectiveBtn" class="w-full px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+              台形補正モード
+            </button>
+            <p id="perspectiveHelp" class="text-xs text-slate-500 hidden">四隅をクリックして「適用」を押してください</p>
+            <button id="applyPerspectiveBtn" class="w-full px-3 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition hidden">
+              補正を適用
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: 記号配置 -->
+        <div id="panel-2" class="step-panel bg-white rounded-xl shadow-sm border border-slate-200 p-4 hidden">
+          <h3 class="font-bold text-slate-900 mb-3 flex items-center gap-2">
+            <span class="flex items-center justify-center w-6 h-6 bg-blue-600 text-white text-xs rounded-full">2</span>
+            記号配置
+          </h3>
+          <div class="grid grid-cols-2 gap-2 mb-3">
+            <button class="symbol-btn border-2 border-slate-200 rounded-lg p-2 hover:bg-slate-50 transition" data-symbol="outlet">
+              <svg viewBox="0 0 40 40" class="w-full h-8"><circle cx="20" cy="20" r="12" fill="none" stroke="#1e293b" stroke-width="2"/><circle cx="20" cy="14" r="2" fill="#1e293b"/><circle cx="20" cy="26" r="2" fill="#1e293b"/></svg>
+              <p class="text-xs mt-1">コンセント</p>
+            </button>
+            <button class="symbol-btn border-2 border-slate-200 rounded-lg p-2 hover:bg-slate-50 transition" data-symbol="switch">
+              <svg viewBox="0 0 40 40" class="w-full h-8"><circle cx="20" cy="20" r="12" fill="none" stroke="#1e293b" stroke-width="2"/><line x1="20" y1="8" x2="28" y2="20" stroke="#1e293b" stroke-width="2"/></svg>
+              <p class="text-xs mt-1">スイッチ</p>
+            </button>
+            <button class="symbol-btn border-2 border-slate-200 rounded-lg p-2 hover:bg-slate-50 transition" data-symbol="junction">
+              <svg viewBox="0 0 40 40" class="w-full h-8"><circle cx="20" cy="20" r="10" fill="none" stroke="#1e293b" stroke-width="2"/><path d="M12 12 L28 28 M28 12 L12 28" stroke="#1e293b" stroke-width="2"/></svg>
+              <p class="text-xs mt-1">JB</p>
+            </button>
+            <button class="symbol-btn border-2 border-slate-200 rounded-lg p-2 hover:bg-slate-50 transition" data-symbol="light">
+              <svg viewBox="0 0 40 40" class="w-full h-8"><circle cx="20" cy="20" r="12" fill="none" stroke="#1e293b" stroke-width="2"/><path d="M12 12 L28 28 M28 12 L12 28" stroke="#1e293b" stroke-width="2"/><circle cx="20" cy="20" r="4" fill="none" stroke="#1e293b" stroke-width="2"/></svg>
+              <p class="text-xs mt-1">照明</p>
+            </button>
+            <button class="symbol-btn border-2 border-slate-200 rounded-lg p-2 hover:bg-slate-50 transition col-span-2" data-symbol="panel">
+              <svg viewBox="0 0 80 40" class="w-full h-8"><rect x="20" y="8" width="40" height="24" fill="none" stroke="#1e293b" stroke-width="2"/><line x1="30" y1="8" x2="30" y2="32" stroke="#1e293b" stroke-width="1.5"/><line x1="40" y1="8" x2="40" y2="32" stroke="#1e293b" stroke-width="1.5"/><line x1="50" y1="8" x2="50" y2="32" stroke="#1e293b" stroke-width="1.5"/></svg>
+              <p class="text-xs mt-1">分電盤</p>
+            </button>
+          </div>
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" id="snapToGrid" checked class="w-4 h-4 text-blue-600 rounded">
+              <span>グリッドにスナップ</span>
+            </label>
+            <button id="deleteModeBtn" class="w-full px-3 py-2 text-sm bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition">
+              削除モード
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 3: 配線 -->
+        <div id="panel-3" class="step-panel bg-white rounded-xl shadow-sm border border-slate-200 p-4 hidden">
+          <h3 class="font-bold text-slate-900 mb-3 flex items-center gap-2">
+            <span class="flex items-center justify-center w-6 h-6 bg-blue-600 text-white text-xs rounded-full">3</span>
+            配線
+          </h3>
+          <div class="space-y-2 mb-3">
+            <label class="text-xs text-slate-600 font-medium">線種</label>
+            <select id="lineTypeSelect" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <option value="solid">実線 - 露出配線</option>
+              <option value="dashed">破線 - 天井隠ぺい</option>
+              <option value="dotted">点線 - 床隠ぺい</option>
+            </select>
+          </div>
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 text-sm">
+              <input type="checkbox" id="autoSnapLine" class="w-4 h-4 text-blue-600 rounded">
+              <span>濃い線にスナップ</span>
+            </label>
+            <button id="cancelWireBtn" class="w-full px-3 py-2 text-sm bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition hidden">
+              配線をキャンセル
+            </button>
+          </div>
+          <p class="text-xs text-slate-500 mt-3">2点をクリックして配線を引けます</p>
+        </div>
+
+        <!-- Step 4: PDF出力 -->
+        <div id="panel-4" class="step-panel bg-white rounded-xl shadow-sm border border-slate-200 p-4 hidden">
+          <h3 class="font-bold text-slate-900 mb-3 flex items-center gap-2">
+            <span class="flex items-center justify-center w-6 h-6 bg-blue-600 text-white text-xs rounded-full">4</span>
+            PDF出力
+          </h3>
+          <div class="space-y-2 mb-3">
+            <label class="text-xs text-slate-600 font-medium">用紙サイズ</label>
+            <select id="paperSize" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+              <option value="a4">A4 (210×297mm)</option>
+              <option value="a3">A3 (297×420mm)</option>
+            </select>
+          </div>
+          <div class="space-y-2 mb-3">
+            <label class="text-xs text-slate-600 font-medium">向き</label>
+            <select id="orientation" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg">
+              <option value="landscape">横</option>
+              <option value="portrait">縦</option>
+            </select>
+          </div>
+          <button id="generatePdfBtn" class="w-full px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+            PDFを生成
+          </button>
+          <p class="text-xs text-slate-500 mt-3">凡例と部品表が自動で追記されます</p>
+        </div>
+
+        <!-- 部品集計 -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+          <h3 class="font-bold text-slate-900 mb-3">部品集計</h3>
+          <div id="partsCount" class="space-y-1 text-sm">
+            <div class="flex justify-between text-slate-500">
+              <span>コンセント</span><span>0</span>
+            </div>
+            <div class="flex justify-between text-slate-500">
+              <span>スイッチ</span><span>0</span>
+            </div>
+            <div class="flex justify-between text-slate-500">
+              <span>JB</span><span>0</span>
+            </div>
+            <div class="flex justify-between text-slate-500">
+              <span>照明</span><span>0</span>
+            </div>
+            <div class="flex justify-between text-slate-500">
+              <span>分電盤</span><span>0</span>
+            </div>
+          </div>
+          <div class="border-t border-slate-200 mt-3 pt-3">
+            <div class="flex justify-between font-medium">
+              <span>合計</span><span id="totalCount">0</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Canvas Area -->
+      <div class="lg:col-span-3">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span id="modeIndicator" class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">待機中</span>
+              <span id="coordsIndicator" class="text-xs text-slate-500"></span>
+            </div>
+            <div class="flex gap-2">
+              <button id="zoomOutBtn" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 rounded transition">-</button>
+              <span id="zoomLevel" class="px-2 py-1 text-sm text-slate-600">100%</span>
+              <button id="zoomInBtn" class="px-2 py-1 text-sm bg-slate-100 hover:bg-slate-200 rounded transition">+</button>
+              <button id="resetViewBtn" class="px-3 py-1 text-sm bg-slate-100 hover:bg-slate-200 rounded transition">リセット</button>
+            </div>
+          </div>
+          <div class="canvas-container rounded-lg overflow-auto" style="max-height: calc(100vh - 280px);">
+            <canvas id="mainCanvas" width="1200" height="800" class="border border-slate-300 bg-white"></canvas>
+          </div>
+          <div class="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+            <div class="flex items-center gap-1">
+              <kbd class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded">Ctrl+Z</kbd>
+              <span>元に戻す</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <kbd class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded">Del</kbd>
+              <span>削除</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <kbd class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded">Esc</kbd>
+              <span>キャンセル</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const { jsPDF } = window.jspdf;
+
+class ElectricalDiagramEditor {
+  constructor() {
+    this.canvas = document.getElementById('mainCanvas');
+    this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
+    this.baseImage = null;
+    this.symbols = [];
+    this.wires = [];
+    this.perspectivePoints = [];
+    this.undoStack = [];
+    this.redoStack = [];
+    
+    this.mode = 'idle';
+    this.selectedSymbolType = null;
+    this.isDeleteMode = false;
+    this.isPerspectiveMode = false;
+    
+    this.imageOpacity = 0.5;
+    this.imageContrast = 1.0;
+    this.zoom = 1.0;
+    this.panOffset = { x: 0, y: 0 };
+    this.isDragging = false;
+    this.dragStart = { x: 0, y: 0 };
+    
+    this.tempWireStart = null;
+    this.snapToGrid = true;
+    this.autoSnapLine = false;
+    this.gridSize = 10;
+    
+    this.initEventListeners();
+    this.render();
+  }
+
+  initEventListeners() {
+    // Step navigation
+    document.querySelectorAll('.step-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.switchStep(btn.dataset.step));
+    });
+
+    // Image upload
+    document.getElementById('imageInput').addEventListener('change', (e) => this.loadImage(e));
+    
+    // Image controls
+    document.getElementById('opacitySlider').addEventListener('input', (e) => {
+      this.imageOpacity = e.target.value / 100;
+      document.getElementById('opacityVal').textContent = e.target.value;
+      this.render();
+    });
+    
+    document.getElementById('contrastSlider').addEventListener('input', (e) => {
+      this.imageContrast = e.target.value / 100;
+      document.getElementById('contrastVal').textContent = e.target.value;
+      this.render();
+    });
+
+    document.getElementById('perspectiveBtn').addEventListener('click', () => this.startPerspectiveMode());
+    document.getElementById('applyPerspectiveBtn').addEventListener('click', () => this.applyPerspective());
+
+    // Symbol buttons
+    document.querySelectorAll('.symbol-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.selectSymbol(btn.dataset.symbol, btn));
+    });
+
+    document.getElementById('snapToGrid').addEventListener('change', (e) => {
+      this.snapToGrid = e.target.checked;
+    });
+
+    document.getElementById('deleteModeBtn').addEventListener('click', () => this.toggleDeleteMode());
+
+    // Wire controls
+    document.getElementById('autoSnapLine').addEventListener('change', (e) => {
+      this.autoSnapLine = e.target.checked;
+    });
+    document.getElementById('cancelWireBtn').addEventListener('click', () => {
+      this.tempWireStart = null;
+      this.mode = 'wire';
+      document.getElementById('cancelWireBtn').classList.add('hidden');
+      this.render();
+    });
+
+    // PDF
+    document.getElementById('generatePdfBtn').addEventListener('click', () => this.generatePDF());
+
+    // Canvas interactions
+    this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+    this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+    this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+    this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+    this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+    this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+
+    // Zoom controls
+    document.getElementById('zoomInBtn').addEventListener('click', () => this.setZoom(this.zoom * 1.2));
+    document.getElementById('zoomOutBtn').addEventListener('click', () => this.setZoom(this.zoom / 1.2));
+    document.getElementById('resetViewBtn').addEventListener('click', () => {
+      this.zoom = 1.0;
+      this.panOffset = { x: 0, y: 0 };
+      this.updateZoomDisplay();
+      this.render();
+    });
+
+    // Save/Load
+    document.getElementById('saveBtn').addEventListener('click', () => this.saveProject());
+    document.getElementById('loadBtn').addEventListener('click', () => document.getElementById('loadInput').click());
+    document.getElementById('loadInput').addEventListener('change', (e) => this.loadProject(e));
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+  }
+
+  switchStep(step) {
+    document.querySelectorAll('.step-btn').forEach(btn => {
+      btn.classList.remove('step-active');
+      btn.classList.add('bg-slate-100', 'hover:bg-slate-200');
+    });
+    document.querySelector(`[data-step="${step}"]`).classList.add('step-active');
+    document.querySelector(`[data-step="${step}"]`).classList.remove('bg-slate-100', 'hover:bg-slate-200');
+
+    document.querySelectorAll('.step-panel').forEach(panel => panel.classList.add('hidden'));
+    document.getElementById(`panel-${step}`).classList.remove('hidden');
+
+    if (step === '2') {
+      this.mode = 'place';
+      this.updateModeIndicator('記号配置モード');
+    } else if (step === '3') {
+      this.mode = 'wire';
+      this.updateModeIndicator('配線モード');
+      this.selectedSymbolType = null;
+      document.querySelectorAll('.symbol-btn').forEach(b => b.classList.remove('active'));
+    } else if (step === '4') {
+      this.mode = 'idle';
+      this.updateModeIndicator('待機中');
+    } else {
+      this.mode = 'idle';
+      this.updateModeIndicator('待機中');
+    }
+    this.render();
+  }
+
+  updateModeIndicator(text) {
+    document.getElementById('modeIndicator').textContent = text;
+  }
+
+  loadImage(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        this.baseImage = img;
+        this.canvas.width = Math.max(img.width, 1200);
+        this.canvas.height = Math.max(img.height, 800);
+        document.getElementById('imageControls').classList.remove('hidden');
+        this.saveState();
+        this.render();
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  startPerspectiveMode() {
+    this.isPerspectiveMode = true;
+    this.perspectivePoints = [];
+    document.getElementById('perspectiveHelp').classList.remove('hidden');
+    document.getElementById('applyPerspectiveBtn').classList.add('hidden');
+    this.updateModeIndicator('台形補正: 四隅をクリック');
+  }
+
+  applyPerspective() {
+    if (this.perspectivePoints.length !== 4) return;
+    
+    const pts = this.perspectivePoints;
+    const xs = pts.map(p => p.x);
+    const ys = pts.map(p => p.y);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const width = maxX - minX;
+    const height = maxY - minY;
+    
+    // 簡易的な台形補正: 選択範囲をキャンバス全体に拡大
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = width;
+    tempCanvas.height = height;
+    const tempCtx = tempCanvas.getContext('2d');
+    
+    const srcCanvas = document.createElement('canvas');
+    srcCanvas.width = this.baseImage.width;
+    srcCanvas.height = this.baseImage.height;
+    srcCanvas.getContext('2d').drawImage(this.baseImage, 0, 0);
+    
+    tempCtx.drawImage(srcCanvas, minX, minY, width, height, 0, 0, width, height);
+    
+    const correctedImg = new Image();
+    correctedImg.onload = () => {
+      this.baseImage = correctedImg;
+      this.isPerspectiveMode = false;
+      this.perspectivePoints = [];
+      document.getElementById('perspectiveHelp').classList.add('hidden');
+      document.getElementById('applyPerspectiveBtn').classList.add('hidden');
+      this.saveState();
+      this.render();
+    };
+    correctedImg.src = tempCanvas.toDataURL();
+  }
+
+  selectSymbol(type, btn) {
+    document.querySelectorAll('.symbol-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    this.selectedSymbolType = type;
+    this.isDeleteMode = false;
+    document.getElementById('deleteModeBtn').classList.remove('bg-red-600', 'text-white');
+  }
+
+  toggleDeleteMode() {
+    this.isDeleteMode = !this.isDeleteMode;
+    const btn = document.getElementById('deleteModeBtn');
+    if (this.isDeleteMode) {
+      btn.classList.add('bg-red-600', 'text-white');
+      this.selectedSymbolType = null;
+      document.querySelectorAll('.symbol-btn').forEach(b => b.classList.remove('active'));
+      this.updateModeIndicator('削除モード');
+    } else {
+      btn.classList.remove('bg-red-600', 'text-white');
+      this.updateModeIndicator('記号配置モード');
+    }
+  }
+
+  getCanvasPos(e) {
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    return {
+      x: (e.clientX - rect.left) * scaleX / this.zoom - this.panOffset.x,
+      y: (e.clientY - rect.top) * scaleY / this.zoom - this.panOffset.y
+    };
+  }
+
+  handleMouseDown(e) {
+    const pos = this.getCanvasPos(e);
+    
+    if (this.isPerspectiveMode) {
+      if (this.perspectivePoints.length < 4) {
+        this.perspectivePoints.push(pos);
+        if (this.perspectivePoints.length === 4) {
+          document.getElementById('applyPerspectiveBtn').classList.remove('hidden');
+          this.updateModeIndicator('「補正を適用」をクリック');
+        }
+        this.render();
+      }
+      return;
+    }
+
+    if (this.mode === 'place' && this.selectedSymbolType && !this.isDeleteMode) {
+      this.placeSymbol(pos);
+    } else if (this.isDeleteMode) {
+      this.deleteAtPosition(pos);
+    } else if (this.mode === 'wire') {
+      this.handleWireClick(pos);
+    }
+    
+    this.isDragging = true;
+    this.dragStart = pos;
+  }
+
+  handleMouseMove(e) {
+    const pos = this.getCanvasPos(e);
+    document.getElementById('coordsIndicator').textContent = `X: ${Math.round(pos.x)}, Y: ${Math.round(pos.y)}`;
+    
+    if (this.mode === 'wire' && this.tempWireStart) {
+      this.render();
+      this.drawTempWire(this.tempWireStart, pos);
+    }
+  }
+
+  handleMouseUp(e) {
+    this.isDragging = false;
+  }
+
+  handleTouchStart(e) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    this.handleMouseDown({ clientX: touch.clientX, clientY: touch.clientY });
+  }
+
+  handleTouchMove(e) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    this.handleMouseMove({ clientX: touch.clientX, clientY: touch.clientY });
+  }
+
+  handleTouchEnd(e) {
+    this.handleMouseUp(e);
+  }
+
+  placeSymbol(pos) {
+    let { x, y } = pos;
+    if (this.snapToGrid) {
+      x = Math.round(x / this.gridSize) * this.gridSize;
+      y = Math.round(y / this.gridSize) * this.gridSize;
+    }
+    
+    this.symbols.push({
+      type: this.selectedSymbolType,
+      x, y,
+      id: Date.now() + Math.random()
+    });
+    
+    this.saveState();
+    this.updatePartsCount();
+    this.render();
+  }
+
+  deleteAtPosition(pos) {
+    const threshold = 20;
+    
+    for (let i = this.symbols.length - 1; i >= 0; i--) {
+      const sym = this.symbols[i];
+      const dist = Math.hypot(sym.x - pos.x, sym.y - pos.y);
+      if (dist < threshold) {
+        this.symbols.splice(i, 1);
+        this.saveState();
+        this.updatePartsCount();
+        this.render();
+        return;
+      }
+    }
+    
+    for (let i = this.wires.length - 1; i >= 0; i--) {
+      const wire = this.wires[i];
+      if (this.pointToLineDistance(pos, wire.start, wire.end) < 10) {
+        this.wires.splice(i, 1);
+        this.saveState();
+        this.render();
+        return;
+      }
+    }
+  }
+
+  pointToLineDistance(pt, lineStart, lineEnd) {
+    const A = pt.x - lineStart.x;
+    const B = pt.y - lineStart.y;
+    const C = lineEnd.x - lineStart.x;
+    const D = lineEnd.y - lineStart.y;
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    let param = -1;
+    if (lenSq !== 0) param = dot / lenSq;
+    let xx, yy;
+    if (param < 0) {
+      xx = lineStart.x;
+      yy = lineStart.y;
+    } else if (param > 1) {
+      xx = lineEnd.x;
+      yy = lineEnd.y;
+    } else {
+      xx = lineStart.x + param * C;
+      yy = lineStart.y + param * D;
+    }
+    return Math.hypot(pt.x - xx, pt.y - yy);
+  }
+
+  handleWireClick(pos) {
+    if (!this.tempWireStart) {
+      let snapPos = this.autoSnapLine ? this.findDarkPixelNear(pos) : pos;
+      this.tempWireStart = snapPos;
+      document.getElementById('cancelWireBtn').classList.remove('hidden');
+      this.updateModeIndicator('終点をクリック');
+    } else {
+      let snapPos = this.autoSnapLine ? this.findDarkPixelNear(pos) : pos;
+      const lineType = document.getElementById('lineTypeSelect').value;
+      this.wires.push({
+        start: this.tempWireStart,
+        end: snapPos,
+        type: lineType,
+        id: Date.now() + Math.random()
+      });
+      this.tempWireStart = null;
+      document.getElementById('cancelWireBtn').classList.add('hidden');
+      this.updateModeIndicator('配線モード');
+      this.saveState();
+      this.render();
+    }
+  }
+
+  findDarkPixelNear(pos) {
+    if (!this.baseImage) return pos;
+    
+    const searchRadius = 20;
+    const imageData = this.ctx.getImageData(
+      Math.max(0, pos.x - searchRadius),
+      Math.max(0, pos.y - searchRadius),
+      Math.min(searchRadius * 2, this.canvas.width - pos.x + searchRadius),
+      Math.min(searchRadius * 2, this.canvas.height - pos.y + searchRadius)
+    );
+    
+    let minDist = Infinity;
+    let bestPos = pos;
+    
+    for (let dy = 0; dy < imageData.height; dy++) {
+      for (let dx = 0; dx < imageData.width; dx++) {
+        const idx = (dy * imageData.width + dx) * 4;
+        const brightness = (imageData.data[idx] + imageData.data[idx + 1] + imageData.data[idx + 2]) / 3;
+        if (brightness < 100) {
+          const x = pos.x - searchRadius + dx;
+          const y = pos.y - searchRadius + dy;
+          const dist = Math.hypot(x - pos.x, y - pos.y);
+          if (dist < minDist) {
+            minDist = dist;
+            bestPos = { x, y };
+          }
+        }
+      }
+    }
+    
+    return bestPos;
+  }
+
+  drawTempWire(start, end) {
+    this.ctx.save();
+    this.ctx.strokeStyle = '#3b82f6';
+    this.ctx.lineWidth = 2;
+    this.ctx.setLineDash([5, 5]);
+    this.ctx.beginPath();
+    this.ctx.moveTo(start.x, start.y);
+    this.ctx.lineTo(end.x, end.y);
+    this.ctx.stroke();
+    this.ctx.restore();
+  }
+
+  setZoom(newZoom) {
+    this.zoom = Math.max(0.1, Math.min(5, newZoom));
+    this.updateZoomDisplay();
+    this.render();
+  }
+
+  updateZoomDisplay() {
+    document.getElementById('zoomLevel').textContent = Math.round(this.zoom * 100) + '%';
+  }
+
+  render() {
+    this.ctx.save();
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.scale(this.zoom, this.zoom);
+    this.ctx.translate(this.panOffset.x, this.panOffset.y);
+    
+    // Draw grid
+    this.drawGrid();
+    
+    // Draw base image
+    if (this.baseImage) {
+      this.ctx.save();
+      this.ctx.globalAlpha = this.imageOpacity;
+      this.ctx.filter = `contrast(${this.imageContrast * 100}%)`;
+      this.ctx.drawImage(this.baseImage, 0, 0);
+      this.ctx.restore();
+    }
+    
+    // Draw perspective points
+    if (this.isPerspectiveMode && this.perspectivePoints.length > 0) {
+      this.ctx.strokeStyle = '#ef4444';
+      this.ctx.fillStyle = '#ef4444';
+      this.ctx.lineWidth = 2;
+      this.ctx.beginPath();
+      this.perspectivePoints.forEach((pt, i) => {
+        if (i === 0) this.ctx.moveTo(pt.x, pt.y);
+        else this.ctx.lineTo(pt.x, pt.y);
+        this.ctx.arc(pt.x, pt.y, 5, 0, Math.PI * 2);
+        this.ctx.fill();
+      });
+      if (this.perspectivePoints.length === 4) this.ctx.closePath();
+      this.ctx.stroke();
+    }
+    
+    // Draw wires
+    this.wires.forEach(wire => this.drawWire(wire));
+    
+    // Draw symbols
+    this.symbols.forEach(sym => this.drawSymbol(sym));
+    
+    this.ctx.restore();
+  }
+
+  drawGrid() {
+    if (!this.snapToGrid) return;
+    this.ctx.strokeStyle = '#e2e8f0';
+    this.ctx.lineWidth = 0.5;
+    for (let x = 0; x < this.canvas.width; x += this.gridSize) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(x, 0);
+      this.ctx.lineTo(x, this.canvas.height);
+      this.ctx.stroke();
+    }
+    for (let y = 0; y < this.canvas.height; y += this.gridSize) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(0, y);
+      this.ctx.lineTo(this.canvas.width, y);
+      this.ctx.stroke();
+    }
+  }
+
+  drawWire(wire) {
+    this.ctx.save();
+    this.ctx.strokeStyle = '#1e293b';
+    this.ctx.lineWidth = 2;
+    this.ctx.lineCap = 'round';
+    
+    if (wire.type === 'dashed') {
+      this.ctx.setLineDash([10, 5]);
+    } else if (wire.type === 'dotted') {
+      this.ctx.setLineDash([2, 4]);
+    } else {
+      this.ctx.setLineDash([]);
+    }
+    
+    this.ctx.beginPath();
+    this.ctx.moveTo(wire.start.x, wire.start.y);
+    this.ctx.lineTo(wire.end.x, wire.end.y);
+    this.ctx.stroke();
+    this.ctx.restore();
+  }
+
+  drawSymbol(sym) {
+    this.ctx.save();
+    this.ctx.strokeStyle = '#1e293b';
+    this.ctx.fillStyle = '#1e293b';
+    this.ctx.lineWidth = 2;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+    
+    const x = sym.x, y = sym.y;
+    const r = 12;
+    
+    switch(sym.type) {
+      case 'outlet':
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, r, 0, Math.PI * 2);
+        this.ctx.stroke();
+        this.ctx.beginPath();
+        this.ctx.arc(x, y - 6, 2, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.beginPath();
+        this.ctx.arc(x, y + 6, 2, 0, Math.PI * 2);
+        this.ctx.fill();
+        break;
+        
+      case 'switch':
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, r, 0, Math.PI * 2);
+        this.ctx.stroke();
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, y - r);
+        this.ctx.lineTo(x + r * 0.7, y);
+        this.ctx.stroke();
+        break;
+        
+      case 'junction':
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, r * 0.8, 0, Math.PI * 2);
+        this.ctx.stroke();
+        this.ctx.beginPath();
+        this.ctx.moveTo(x - r * 0.6, y - r * 0.6);
+        this.ctx.lineTo(x + r * 0.6, y + r * 0.6);
+        this.ctx.moveTo(x + r * 0.6, y - r * 0.6);
+        this.ctx.lineTo(x - r * 0.6, y + r * 0.6);
+        this.ctx.stroke();
+        break;
+        
+      case 'light':
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, r, 0, Math.PI * 2);
+        this.ctx.stroke();
+        this.ctx.beginPath();
+        this.ctx.moveTo(x - r * 0.7, y - r * 0.7);
+        this.ctx.lineTo(x + r * 0.7, y + r * 0.7);
+        this.ctx.moveTo(x + r * 0.7, y - r * 0.7);
+        this.ctx.lineTo(x - r * 0.7, y + r * 0.7);
+        this.ctx.stroke();
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, r * 0.3, 0, Math.PI * 2);
+        this.ctx.stroke();
+        break;
+        
+      case 'panel':
+        this.ctx.strokeRect(x - 20, y - 12, 40, 24);
+        this.ctx.beginPath();
+        this.ctx.moveTo(x - 10, y - 12);
+        this.ctx.lineTo(x - 10, y + 12);
+        this.ctx.moveTo(x, y - 12);
+        this.ctx.lineTo(x, y + 12);
+        this.ctx.moveTo(x + 10, y - 12);
+        this.ctx.lineTo(x + 10, y + 12);
+        this.ctx.stroke();
+        break;
+    }
+    
+    this.ctx.restore();
+  }
+
+  updatePartsCount() {
+    const counts = {
+      outlet: 0,
+      switch: 0,
+      junction: 0,
+      light: 0,
+      panel: 0
+    };
+    
+    this.symbols.forEach(s => counts[s.type]++);
+    
+    const container = document.getElementById('partsCount');
+    container.innerHTML = `
+      <div class="flex justify-between"><span>コンセント</span><span>${counts.outlet}</span></div>
+      <div class="flex justify-between"><span>スイッチ</span><span>${counts.switch}</span></div>
+      <div class="flex justify-between"><span>JB</span><span>${counts.junction}</span></div>
+      <div class="flex justify-between"><span>照明</span><span>${counts.light}</span></div>
+      <div class="flex justify-between"><span>分電盤</span><span>${counts.panel}</span></div>
+    `;
+    
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    document.getElementById('totalCount').textContent = total;
+  }
+
+  saveState() {
+    const state = {
+      symbols: JSON.parse(JSON.stringify(this.symbols)),
+      wires: JSON.parse(JSON.stringify(this.wires))
+    };
+    this.undoStack.push(state);
+    if (this.undoStack.length > 50) this.undoStack.shift();
+    this.redoStack = [];
+  }
+
+  handleKeyDown(e) {
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === 'z') {
+        e.preventDefault();
+        this.undo();
+      } else if (e.key === 'y') {
+        e.preventDefault();
+        this.redo();
+      }
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      // 選択削除は削除モードで実装済み
+    } else if (e.key === 'Escape') {
+      this.tempWireStart = null;
+      document.getElementById('cancelWireBtn').classList.add('hidden');
+      this.render();
+    }
+  }
+
+  undo() {
+    if (this.undoStack.length <= 1) return;
+    const current = this.undoStack.pop();
+    this.redoStack.push(current);
+    const prev = this.undoStack[this.undoStack.length - 1];
+    this.symbols = JSON.parse(JSON.stringify(prev.symbols));
+    this.wires = JSON.parse(JSON.stringify(prev.wires));
+    this.updatePartsCount();
+    this.render();
+  }
+
+  redo() {
+    if (this.redoStack.length === 0) return;
+    const state = this.redoStack.pop();
+    this.undoStack.push(state);
+    this.symbols = JSON.parse(JSON.stringify(state.symbols));
+    this.wires = JSON.parse(JSON.stringify(state.wires));
+    this.updatePartsCount();
+    this.render();
+  }
+
+  saveProject() {
+    const data = {
+      version: '1.0',
+      symbols: this.symbols,
+      wires: this.wires,
+      canvasSize: { width: this.canvas.width, height: this.canvas.height }
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `配線図_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  loadProject(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        this.symbols = data.symbols || [];
+        this.wires = data.wires || [];
+        if (data.canvasSize) {
+          this.canvas.width = data.canvasSize.width;
+          this.canvas.height = data.canvasSize.height;
+        }
+        this.updatePartsCount();
+        this.saveState();
+        this.render();
+        alert('プロジェクトを読み込みました');
+      } catch (err) {
+        alert('ファイルの読み込みに失敗しました');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
+  generatePDF() {
+    const paperSize = document.getElementById('paperSize').value;
+    const orientation = document.getElementById('orientation').value;
+    
+    const pdf = new jsPDF({
+      orientation: orientation,
+      unit: 'mm',
+      format: paperSize
+    });
+    
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const contentWidth = pageWidth - margin * 2;
+    const contentHeight = pageHeight - margin * 2 - 30; // 凡例スペース確保
+    
+    // 一時的に画像なしで描画
+    const tempOpacity = this.imageOpacity;
+    this.imageOpacity = 0;
+    this.render();
+    
+    // Canvas を画像化
+    const imgData = this.canvas.toDataURL('image/png');
+    const imgAspect = this.canvas.width / this.canvas.height;
+    const pageAspect = contentWidth / contentHeight;
+    
+    let drawWidth, drawHeight;
+    if (imgAspect > pageAspect) {
+      drawWidth = contentWidth;
+      drawHeight = contentWidth / imgAspect;
+    } else {
+      drawHeight = contentHeight;
+      drawWidth = contentHeight * imgAspect;
+    }
+    
+    pdf.addImage(imgData, 'PNG', margin, margin, drawWidth, drawHeight);
+    
+    // 元に戻す
+    this.imageOpacity = tempOpacity;
+    this.render();
+    
+    // 凡例と部品表を追加
+    const legendY = margin + drawHeight + 5;
+    pdf.setFontSize(10);
+    pdf.text('【記号凡例】 JIS C 0303準拠', margin, legendY);
+    
+    const counts = { outlet: 0, switch: 0, junction: 0, light: 0, panel: 0 };
+    this.symbols.forEach(s => counts[s.type]++);
+    
+    pdf.setFontSize(8);
+    let y = legendY + 5;
+    const col1 = ['○ コンセント: ' + counts.outlet + '個', '○ スイッチ: ' + counts.switch + '個', '○ JB: ' + counts.junction + '個'];
+    const col2 = ['○ 照明: ' + counts.light + '個', '○ 分電盤: ' + counts.panel + '個', '配線: ' + this.wires.length + '本'];
+    
+    col1.forEach((t, i) => pdf.text(t, margin, y + i * 4));
+    col2.forEach((t, i) => pdf.text(t, margin + 50, y + i * 4));
+    
+    pdf.setFontSize(7);
+    pdf.text(`作成日: ${new Date().toLocaleDateString('ja-JP')}`, pageWidth - margin - 30, pageHeight - 5);
+    
+    pdf.save(`配線図_${new Date().toISOString().split('T')[0]}.pdf`);
+  }
+}
+
+new ElectricalDiagramEditor();
+</script>
+</body>
+</html>
